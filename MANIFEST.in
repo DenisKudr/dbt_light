@@ -1,0 +1,2 @@
+include dbt_light/sql_templates/postgres/*
+include tests/sql/postgres/*

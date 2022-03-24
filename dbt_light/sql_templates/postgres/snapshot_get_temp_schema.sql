@@ -1,0 +1,1 @@
+select nspname from pg_namespace where oid  =  pg_my_temp_schema();

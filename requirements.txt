@@ -1,0 +1,5 @@
+PyYAML~=6.0
+Jinja2~=3.0.3
+psycopg2~=2.9.3
+setuptools~=57.0.0
+schema~=0.7.5
