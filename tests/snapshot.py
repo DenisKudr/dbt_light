@@ -8,121 +8,51 @@ class TestScd2Loader(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.dbt_test_project_folder = os.environ['dbt_test_project_folder']
-
-    def test_check(self):
-
-        with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_init.sql", 'r') as f:
+        dbt_test_project_folder = os.environ['dbt_test_project_folder']
+        cls.dbt_test_project_folder = dbt_test_project_folder
+        cls.test_params = [
+            {'snapshot': 'snap_check'},
+            {'snapshot': 'snap_timestamp'},
+            {'snapshot': 'snap_check_no_delta_table'},
+            {'snapshot': 'snap_check_processed'},
+            {'snapshot': 'snap_check_no_data', 'init_script': 'snapshot_init_no_data_fields',
+             'incr_script': 'snapshot_incr_no_data_fields'},
+            {'snapshot': 'snap_check_new_fields', 'incr_script': 'snapshot_incr_new_fields'},
+            {'snapshot': 'snap_check_with_model'}
+        ]
+        with DatabaseConnection(dbt_test_project_folder) as db:
+            with open(f"sql/{db.config['db_adapter']}/snapshot_init_drop.sql", 'r') as f:
                 setup = f.read()
             db.execute(setup)
-        snap = Snapshot('snap_check', self.dbt_test_project_folder)
-        snap.build()
+
+    def execute_test(self, **kwargs):
+
+        snapshot = kwargs.get('snapshot')
+        init_script = kwargs.get('init_script', 'snapshot_init')
+        incr_script = kwargs.get('incr_script', 'snapshot_incr')
+        print(f"Executing test for {snapshot}")
+        print(f"Initializing with {init_script}")
 
         with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_incr.sql", 'r') as f:
+            with open(f"sql/{db.config['db_adapter']}/{init_script}.sql", 'r') as f:
                 setup = f.read()
             db.execute(setup)
-        snap = Snapshot('snap_check', self.dbt_test_project_folder)
-        snap.delta_calc()
-        snap.delta_apply()
+        snap = Snapshot(self.dbt_test_project_folder, snapshot)
+        snap.materialize()
 
-    def test_timestamp(self):
-
+        print(f"Initializing increment with {incr_script}")
         with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_init.sql", 'r') as f:
+            with open(f"sql/{db.config['db_adapter']}/{incr_script}.sql", 'r') as f:
                 setup = f.read()
             db.execute(setup)
-        snap = Snapshot('snap_timestamp', self.dbt_test_project_folder)
-        snap.build()
+        snap = Snapshot(self.dbt_test_project_folder, snapshot)
+        snap.materialize()
 
-        with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_incr.sql", 'r') as f:
-                setup = f.read()
-            db.execute(setup)
-        snap = Snapshot('snap_timestamp', self.dbt_test_project_folder)
-        snap.delta_calc()
-        snap.delta_apply()
-
-    def test_check_no_delta_table(self):
-
-        with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_init.sql", 'r') as f:
-                setup = f.read()
-            db.execute(setup)
-        snap = Snapshot('snap_check_no_delta_table', self.dbt_test_project_folder)
-        snap.build()
-
-        with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_incr.sql", 'r') as f:
-                setup = f.read()
-            db.execute(setup)
-        snap = Snapshot('snap_check_no_delta_table', self.dbt_test_project_folder)
-        snap.build()
-
-    def test_check_processed(self):
-
-        with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_init.sql", 'r') as f:
-                setup = f.read()
-            db.execute(setup)
-        snap = Snapshot('snap_check_processed', self.dbt_test_project_folder)
-        snap.build()
-
-        with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_incr.sql", 'r') as f:
-                setup = f.read()
-            db.execute(setup)
-        snap = Snapshot('snap_check_processed', self.dbt_test_project_folder)
-        snap.build()
-
-    def test_check_no_data(self):
-
-        with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_init_no_data_fields.sql", 'r') as f:
-                setup = f.read()
-            db.execute(setup)
-        snap = Snapshot('snap_check_no_data', self.dbt_test_project_folder)
-        snap.build()
-
-        with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_incr_no_data_fields.sql", 'r') as f:
-                setup = f.read()
-            db.execute(setup)
-        snap = Snapshot('snap_check_no_data', self.dbt_test_project_folder)
-        snap.build()
-
-    def test_check_new_fields(self):
-
-        with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_init.sql", 'r') as f:
-                setup = f.read()
-            db.execute(setup)
-        snap = Snapshot('snap_check_new_fields', self.dbt_test_project_folder)
-        snap.build()
-
-        with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_incr_new_fields.sql", 'r') as f:
-                setup = f.read()
-            db.execute(setup)
-        snap = Snapshot('snap_check_new_fields', self.dbt_test_project_folder)
-        snap.build()
-
-    def test_check_with_model(self):
-
-        with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_init.sql", 'r') as f:
-                setup = f.read()
-            db.execute(setup)
-        snap = Snapshot('snap_check_with_model', self.dbt_test_project_folder)
-        snap.build()
-
-        with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_incr.sql", 'r') as f:
-                setup = f.read()
-            db.execute(setup)
-        snap = Snapshot('snap_check_with_model', self.dbt_test_project_folder)
-        snap.build()
+    def test_snap(self):
+        for test in self.test_params:
+            with self.subTest(test['snapshot']):
+                self.execute_test(**test)
+                # TODO: add asserts
 
 
 if __name__ == '__main__':

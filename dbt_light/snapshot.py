@@ -100,7 +100,7 @@ class Snapshot:
             conn.execute_templated_query('snapshot_insert.sql', self.context, 'execute')
 
     @with_connection
-    def build(self, conn: DatabaseConnection = None) -> None:
+    def materialize(self, conn: DatabaseConnection = None) -> None:
         self.delta_calc(conn=conn)
         self.delta_apply(conn=conn)
 
