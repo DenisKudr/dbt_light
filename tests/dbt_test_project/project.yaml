@@ -1,0 +1,6 @@
+views:
+  - schema: dwh_dm
+    pattern: "vw_.*"
+seq_keys:
+  - model: incr_model
+    name: incr_id
