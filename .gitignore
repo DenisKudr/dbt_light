@@ -2,4 +2,3 @@ build
 dbt_light.egg-info
 dist
 __pycache__
-.idea
