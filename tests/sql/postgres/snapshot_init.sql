@@ -8,10 +8,6 @@ CREATE  table etl_stg.check_in
     updated_at_field timestamp without time zone
 );
 
-ALTER TABLE IF EXISTS etl_stg.check_in
-    OWNER to postgres;
-
-
 INSERT INTO etl_stg.check_in (id_field, changing_field, ignored_field, updated_at_field) VALUES (1, 'Schema 1', 'ODP', '2022-01-01 00:00:00');
 INSERT INTO etl_stg.check_in (id_field, changing_field, ignored_field, updated_at_field) VALUES (2, 'Schema 2',  'ODP','2022-01-02 00:00:00');
 INSERT INTO etl_stg.check_in (id_field, changing_field, ignored_field, updated_at_field) VALUES (3, 'Schema 3', 'ODP','2022-01-03 00:00:00');
