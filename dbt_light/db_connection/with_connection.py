@@ -6,8 +6,8 @@ def with_connection(func):
         if kwargs.get('conn'):
             return func(*args, **kwargs)
         else:
-            dbt_project_folder = args[0].dbt_project_folder
-            with DatabaseConnection(dbt_project_folder) as db:
+            dbt_project = args[0].dbt_project
+            with DatabaseConnection(dbt_project) as db:
                 kwargs.update({'conn': db})
                 return func(*args, **kwargs)
     return wrapper

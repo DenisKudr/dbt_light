@@ -6,9 +6,9 @@ from dbt_light.helpers.model_search import model_search
 
 class Model:
 
-    def __init__(self, dbt_project_folder: str, model_name: str):
-        self.dbt_project_folder = dbt_project_folder
-        self.context = model_search(dbt_project_folder, model_name=model_name)
+    def __init__(self, model_name: str, dbt_project: str = None):
+        self.dbt_project = dbt_project
+        self.context = model_search(dbt_project, model_name=model_name)
 
     @with_connection
     def materialize(self, conn: DatabaseConnection) -> None:
@@ -28,6 +28,6 @@ class Model:
             'model_fields': model_fields
         })
 
-        self.context['model'] = model_render(self.dbt_project_folder, self.context.get('model'), self.context)
+        self.context['model'] = model_render(self.context.get('model'), self.context, self.dbt_project)
         conn.execute_templated_query('model_materialize.sql', self.context, 'execute')
 

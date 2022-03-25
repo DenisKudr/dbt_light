@@ -1,18 +1,16 @@
 import re
 from glob import glob
 from pathlib import Path
-from dbt_light.exceptions import DuplicateModelsError, ModelNotFound, DBTProjectNotFound, ModelReadError, \
-    NoInputSpecifiedError
+from dbt_light.exceptions import DuplicateModelsError, ModelNotFound, ModelReadError, NoInputSpecifiedError
 from dbt_light.helpers.config_read import config_read
 
 
-def model_search(dbt_project_folder: str, model_name: str = None, snapshot_name: str = None) -> dict:
+def model_search(dbt_project: str = None, model_name: str = None, snapshot_name: str = None) -> dict:
 
-    if not Path(dbt_project_folder).is_dir():
-        raise DBTProjectNotFound(dbt_project_folder)
+    dbt_project_folder = config_read(dbt_project=dbt_project, config_type='profiles')['path']
 
     if snapshot_name:
-        snapshot = config_read(dbt_project_folder, 'snapshots', snapshot_name)
+        snapshot = config_read(dbt_project, 'snapshots', snapshot_name)
         if not snapshot.get('input_table'):
             snapshot_file = Path(f"{dbt_project_folder}/snapshots/{snapshot['snapshot']}.sql")
             if not snapshot_file.is_file():
@@ -37,7 +35,7 @@ def model_search(dbt_project_folder: str, model_name: str = None, snapshot_name:
             else:
                 models.update({key: value})
 
-        snapshots = config_read(dbt_project_folder, 'snapshots')
+        snapshots = config_read(dbt_project, 'snapshots')
         snap_schemas = {}
         for snap in snapshots:
             if snap_schemas.get(snap['target_schema']):
@@ -87,7 +85,7 @@ def model_search(dbt_project_folder: str, model_name: str = None, snapshot_name:
                 'model_name': model_name
             })
 
-            project_config = config_read(dbt_project_folder, 'project')
+            project_config = config_read(dbt_project, 'project')
 
             model.update({'materialization': 'table'})
             views = project_config.get('views')

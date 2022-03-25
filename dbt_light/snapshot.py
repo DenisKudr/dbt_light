@@ -7,9 +7,9 @@ from dbt_light.helpers.model_search import model_search
 
 class Snapshot:
 
-    def __init__(self, dbt_project_folder: str, snapshot_name: str):
-        self.dbt_project_folder = dbt_project_folder
-        self.context = model_search(dbt_project_folder, snapshot_name=snapshot_name)
+    def __init__(self, snapshot_name: str, dbt_project: str = None):
+        self.dbt_project = dbt_project
+        self.context = model_search(dbt_project, snapshot_name=snapshot_name)
 
     def prepare_context(self, conn: DatabaseConnection) -> None:
 
@@ -21,7 +21,7 @@ class Snapshot:
 
         model = self.context.get('model')
         if model:
-            rendered_model = model_render(self.dbt_project_folder, model=model)
+            rendered_model = model_render(model=model, dbt_project=self.dbt_project)
             self.context['input_table'] = 'temp_' + self.context['snapshot']
             conn.execute_templated_query('model_materialize.sql', {'model': rendered_model,
                                                                    'model_name': self.context['input_table'],

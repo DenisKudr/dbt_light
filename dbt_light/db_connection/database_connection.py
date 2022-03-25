@@ -8,12 +8,12 @@ from dbt_light.helpers.config_read import config_read
 
 class DatabaseConnection:
 
-    def __init__(self, dbt_project_folder: str):
+    def __init__(self, dbt_project: str = None):
 
-        self.config = config_read(dbt_project_folder, 'project')
+        self.config = config_read(dbt_project, 'profiles')
         db_adapter_mapping = {'postgres': PostgresConnection}
         try:
-            self.db_conn = db_adapter_mapping[self.config.get('db_adapter')](self.config)
+            self.db_conn = db_adapter_mapping[self.config.get('adapter')](self.config)
         except psycopg2.Error as er:
             raise DBConnectionError from er
 
@@ -32,7 +32,7 @@ class DatabaseConnection:
     def execute_templated_query(self, template_name: str, context: dict,
                                 operation_type: Literal["query", "execute"]) -> Union[list, None]:
 
-        template_loader = PackageLoader('dbt_light', f"sql_templates/{self.config['db_adapter']}")
+        template_loader = PackageLoader('dbt_light', f"sql_templates/{self.config['adapter']}")
         template_env = Environment(loader=template_loader)
         template = template_env.get_template(template_name)
         query = template.render(context)

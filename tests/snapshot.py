@@ -1,15 +1,14 @@
 from unittest import TestCase, main
 from dbt_light.db_connection.database_connection import DatabaseConnection
 from dbt_light.snapshot import Snapshot
-import os
 
 
 class TestScd2Loader(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        dbt_test_project_folder = os.environ['dbt_test_project_folder']
-        cls.dbt_test_project_folder = dbt_test_project_folder
+        dbt_test_project = 'dbt_test_project'
+        cls.dbt_test_project = dbt_test_project
         cls.test_params = [
             {'snapshot': 'snap_check'},
             {'snapshot': 'snap_timestamp'},
@@ -20,8 +19,8 @@ class TestScd2Loader(TestCase):
             {'snapshot': 'snap_check_new_fields', 'incr_script': 'snapshot_incr_new_fields'},
             {'snapshot': 'snap_check_with_model'}
         ]
-        with DatabaseConnection(dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/snapshot_init_drop.sql", 'r') as f:
+        with DatabaseConnection(dbt_test_project) as db:
+            with open(f"sql/{db.config['adapter']}/snapshot_init_drop.sql", 'r') as f:
                 setup = f.read()
             db.execute(setup)
 
@@ -33,19 +32,19 @@ class TestScd2Loader(TestCase):
         print(f"Executing test for {snapshot}")
         print(f"Initializing with {init_script}")
 
-        with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/{init_script}.sql", 'r') as f:
+        with DatabaseConnection(self.dbt_test_project) as db:
+            with open(f"sql/{db.config['adapter']}/{init_script}.sql", 'r') as f:
                 setup = f.read()
             db.execute(setup)
-        snap = Snapshot(self.dbt_test_project_folder, snapshot)
+        snap = Snapshot(snapshot, self.dbt_test_project)
         snap.materialize()
 
         print(f"Initializing increment with {incr_script}")
-        with DatabaseConnection(self.dbt_test_project_folder) as db:
-            with open(f"sql/{db.config['db_adapter']}/{incr_script}.sql", 'r') as f:
+        with DatabaseConnection(self.dbt_test_project) as db:
+            with open(f"sql/{db.config['adapter']}/{incr_script}.sql", 'r') as f:
                 setup = f.read()
             db.execute(setup)
-        snap = Snapshot(self.dbt_test_project_folder, snapshot)
+        snap = Snapshot(snapshot, self.dbt_test_project)
         snap.materialize()
 
     def test_snap(self):

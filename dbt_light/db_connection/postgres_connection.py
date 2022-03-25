@@ -3,10 +3,11 @@ import psycopg2
 
 class PostgresConnection:
     def __init__(self, config: dict):
-        self._conn = psycopg2.connect(host=config['db_server'],
-                                      database=config['db_name'],
-                                      user=config['db_user'],
-                                      password=config['db_password'])
+        self._conn = psycopg2.connect(host=config['host'],
+                                      port=config['port'],
+                                      database=config['dbname'],
+                                      user=config['user'],
+                                      password=config['pass'])
         self._cursor = self._conn.cursor()
 
     @property

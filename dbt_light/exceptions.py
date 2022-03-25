@@ -27,8 +27,8 @@ class DuplicateSnapshotsError(DbtLightError):
 class DBTProjectNotFound(DbtLightError):
     """" Raise if dbt project cannot be located """
 
-    def __init__(self, dbt_project_folder):
-        super().__init__(f"Can't access dbt project folder: {dbt_project_folder}")
+    def __init__(self, msg):
+        super().__init__(msg)
 
 
 class ConfigReadError(DbtLightError):
