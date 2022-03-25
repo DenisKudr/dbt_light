@@ -7,11 +7,9 @@ from dbt_light.helpers.model_search import model_search
 
 class Snapshot:
 
-    def __init__(self, snapshot_name: str, dbt_project_folder: str):
-
-        snapshot = model_search(dbt_project_folder, snapshot_name=snapshot_name)
+    def __init__(self, dbt_project_folder: str, snapshot_name: str):
         self.dbt_project_folder = dbt_project_folder
-        self.context = snapshot
+        self.context = model_search(dbt_project_folder, snapshot_name=snapshot_name)
 
     def prepare_context(self, conn: DatabaseConnection) -> None:
 

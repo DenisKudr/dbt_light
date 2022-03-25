@@ -68,7 +68,7 @@ def model_search(dbt_project_folder: str, model_name: str = None, snapshot_name:
                 if model_names.get(model_name):
                     if not model:
                         model.update({
-                            'schema': schema,
+                            'model_schema': schema,
                             'path': str(model_names[model_name]),
                             'is_incremental': True if 'incremental_models' in str(model_names[model_name]) else False
                         })
@@ -83,7 +83,8 @@ def model_search(dbt_project_folder: str, model_name: str = None, snapshot_name:
                 raise ModelReadError(model['path']) from er
 
             model.update({
-                'model': model_sql
+                'model': model_sql,
+                'model_name': model_name
             })
 
             project_config = config_read(dbt_project_folder, 'project')
@@ -92,7 +93,7 @@ def model_search(dbt_project_folder: str, model_name: str = None, snapshot_name:
             views = project_config.get('views')
             if views:
                 for view in views:
-                    if view['schema'] == model['schema']:
+                    if view['schema'] == model['model_schema']:
                         if not view.get('pattern') and not view.get('models'):
                             model['materialization'] = 'view'
                         if (view.get('pattern') and re.search(view['pattern'], model_name)) or \
