@@ -5,11 +5,11 @@
         CREATE TEMPORARY TABLE {{ model_name }} AS
     {% elif materialization == 'view' %}
         CREATE SCHEMA IF NOT EXISTS {{ model_schema }};
-        DROP VIEW IF EXISTS {{ model_schema }}.{{ model_name }};
+        DROP VIEW IF EXISTS {{ model_schema }}.{{ model_name }} CASCADE;
         CREATE VIEW {{ model_schema }}.{{ model_name }} AS
     {% else %}
         CREATE SCHEMA IF NOT EXISTS {{ model_schema }};
-        DROP TABLE IF EXISTS {{ model_schema }}.{{ model_name }};
+        DROP TABLE IF EXISTS {{ model_schema }}.{{ model_name }} CASCADE;
         CREATE TABLE {{ model_schema }}.{{ model_name }} AS
     {% endif %}
 {% endif %}

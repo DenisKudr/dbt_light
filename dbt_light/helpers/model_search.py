@@ -82,27 +82,28 @@ def model_search(dbt_project: str = None, model_name: str = None, snapshot_name:
 
             model.update({
                 'model': model_sql,
-                'model_name': model_name
+                'model_name': model_name,
+                'materialization': 'table',
+                'seq_key': None
             })
 
-            project_config = config_read(dbt_project, 'project')
+            models_config = config_read(dbt_project, 'project').get('models')
 
-            model.update({'materialization': 'table'})
-            views = project_config.get('views')
-            if views:
-                for view in views:
-                    if view['schema'] == model['model_schema']:
-                        if not view.get('pattern') and not view.get('models'):
-                            model['materialization'] = 'view'
-                        if (view.get('pattern') and re.search(view['pattern'], model_name)) or \
-                                (view.get('models') and model_name in view.get('models')):
-                            model['materialization'] = 'view'
+            if models_config:
+                views = models_config.get('views')
+                if views:
+                    for view in views:
+                        if view['schema'] == model['model_schema']:
+                            if not view.get('pattern') and not view.get('models'):
+                                model['materialization'] = 'view'
+                            if (view.get('pattern') and re.search(view['pattern'], model_name)) or \
+                                    (view.get('models') and model_name in view.get('models')):
+                                model['materialization'] = 'view'
 
-            model.update({'seq_key': None})
-            seq_keys = project_config.get('seq_keys')
-            if model['is_incremental'] and seq_keys:
-                for key in seq_keys:
-                    if key['model'] == model_name:
-                        model['seq_key'] = key['name']
+                seq_keys = models_config.get('seq_keys')
+                if model['is_incremental'] and seq_keys:
+                    for key in seq_keys:
+                        if key['model'] == model_name:
+                            model['seq_key'] = key['name']
 
             return model

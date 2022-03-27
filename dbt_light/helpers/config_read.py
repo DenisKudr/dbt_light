@@ -62,19 +62,21 @@ def config_read(dbt_project: str = None, config_type: Literal['profiles', 'proje
         raise ConfigReadError(config_path) from er
 
     project_config_schema = Schema({
-        Optional('views'): [
-            {
-                'schema': str,
-                Optional('pattern'): str,
-                Optional('models'): [str]
-            }
-        ],
-        Optional('seq_keys'): [
-            {
-                'model': str,
-                'name': str
-            }
-        ]
+        Optional('models'): {
+            Optional('views'): [
+                {
+                    'schema': str,
+                    Optional('pattern'): str,
+                    Optional('models'): [str]
+                }
+            ],
+            Optional('seq_keys'): [
+                {
+                    'model': str,
+                    'name': str
+                }
+            ]
+        }
     })
 
     snapshot_config_schema = Schema({
