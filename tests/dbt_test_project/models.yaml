@@ -1,0 +1,6 @@
+materialization: table
+models:
+  - name: incr_model
+    incr_key: incr_id
+  - pattern_name: "vw_*"
+    materialization: view

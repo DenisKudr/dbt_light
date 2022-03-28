@@ -2,6 +2,8 @@ target_schema: dwh_dds
 source_schema: etl_stg
 delta_schema: public
 snapshots:
+  - pattern_name: snap_time.*
+    max_dttm: 5999-12-31
   - name: snap_check
     strategy: check
     max_dttm: 5999-12-31
@@ -30,7 +32,6 @@ snapshots:
     updated_at_field: updated_at_field
   - name: snap_timestamp
     strategy: timestamp
-    max_dttm: 5999-12-31
     input_table: check_in
     delta_table: check_in_delta
     key_fields: id_field

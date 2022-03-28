@@ -1,20 +1,20 @@
 {% if is_incremental and model_exist %}
-    INSERT INTO {{ model_schema }}.{{ model_name }} ({{ model_fields | join(', ') }})
+    INSERT INTO {{ target_schema }}.{{ model }} ({{ model_fields | join(', ') }})
 {% else %}
     {% if materialization == 'temp_table' %}
-        CREATE TEMPORARY TABLE {{ model_name }} AS
+        CREATE TEMPORARY TABLE {{ model }} AS
     {% elif materialization == 'view' %}
-        CREATE SCHEMA IF NOT EXISTS {{ model_schema }};
-        DROP VIEW IF EXISTS {{ model_schema }}.{{ model_name }} CASCADE;
-        CREATE VIEW {{ model_schema }}.{{ model_name }} AS
+        CREATE SCHEMA IF NOT EXISTS {{ target_schema }};
+        DROP VIEW IF EXISTS {{ target_schema }}.{{ model }} CASCADE;
+        CREATE VIEW {{ target_schema }}.{{ model }} AS
     {% else %}
-        CREATE SCHEMA IF NOT EXISTS {{ model_schema }};
-        DROP TABLE IF EXISTS {{ model_schema }}.{{ model_name }} CASCADE;
-        CREATE TABLE {{ model_schema }}.{{ model_name }} AS
+        CREATE SCHEMA IF NOT EXISTS {{ target_schema }};
+        DROP TABLE IF EXISTS {{ target_schema }}.{{ model }} CASCADE;
+        CREATE TABLE {{ target_schema }}.{{ model }} AS
     {% endif %}
 {% endif %}
-{{ model }};
+{{ model_sql }};
 
-{% if is_incremental and seq_key and not model_exist %}
-    alter table {{ model_schema }}.{{ model_name }} add column {{ seq_key }} serial;
+{% if is_incremental and incr_key and not model_exist %}
+    alter table {{ target_schema }}.{{ model }} add column {{ incr_key }} serial;
 {% endif %}

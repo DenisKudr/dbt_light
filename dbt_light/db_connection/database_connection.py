@@ -3,14 +3,14 @@ from typing import Literal, Union
 from jinja2 import Environment, PackageLoader
 from dbt_light.db_connection.postgres_connection import PostgresConnection
 from dbt_light.exceptions import DBOperationalError, DBConnectionError
-from dbt_light.helpers.config_read import config_read
+from dbt_light.context.context import Context
 
 
 class DatabaseConnection:
 
     def __init__(self, dbt_project: str = None):
 
-        self.config = config_read(dbt_project, 'profiles')
+        self.config = Context(dbt_project).dbt_profile
         db_adapter_mapping = {'postgres': PostgresConnection}
         try:
             self.db_conn = db_adapter_mapping[self.config.get('adapter')](self.config)
