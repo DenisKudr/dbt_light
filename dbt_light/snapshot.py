@@ -6,13 +6,13 @@ from dbt_light.exceptions import InputTableNotFound, DeltaTableNotFound, DBOpera
 
 class Snapshot:
 
-    def __init__(self, snapshot_name: str, dbt_project: str = None):
+    def __init__(self, snapshot_name: str, dbt_project: str = None, full_refresh: bool = False):
         self.dbt_project = dbt_project
         self.context = Context(dbt_project)
         self.snapshot_context = self.context.snapshot_context.get_snapshot(snapshot_name)
+        self.full_refresh = full_refresh
 
     def prepare_context(self, conn: DatabaseConnection) -> None:
-
         model = self.snapshot_context.get('model_sql')
         if model:
             rendered_model = self.context.render_model(model)
@@ -30,11 +30,15 @@ class Snapshot:
         if len(input_fields) == 0:
             raise InputTableNotFound(f"{self.snapshot_context.get('source_schema')}.{self.snapshot_context.get('input_table')}")
 
-        snapshot_fields = conn.execute_templated_query('model_get_fields.sql',
-                                                       {'target_schema': self.snapshot_context['target_schema'],
-                                                        'model': self.snapshot_context['snapshot']},
-                                                       'query')
-        init_load = True if len(snapshot_fields) == 0 else False
+        if not self.full_refresh:
+            snapshot_fields = conn.execute_templated_query('model_get_fields.sql',
+                                                           {'target_schema': self.snapshot_context['target_schema'],
+                                                            'model': self.snapshot_context['snapshot']},
+                                                           'query')
+            init_load = True if len(snapshot_fields) == 0 else False
+        else:
+            snapshot_fields = None
+            init_load = True
 
         all_data_fields = [column[0] for column in input_fields
                            if column[0] not in list(map(lambda x: x.upper(),
@@ -73,6 +77,12 @@ class Snapshot:
     @with_connection
     def delta_calc(self, conn: DatabaseConnection = None) -> None:
         self.prepare_context(conn)
+        if self.snapshot_context.get('new_fields') and self.snapshot_context.get('delta_table') != 'temp_delta_table':
+            conn.execute_templated_query('snapshot_add_fields.sql', {
+                'new_fields_with_datatypes': self.snapshot_context.get('new_fields_with_datatypes'),
+                'target_schema': self.snapshot_context.get('delta_schema'),
+                'table': self.snapshot_context.get('delta_table')
+            }, 'execute')
         conn.execute_templated_query('snapshot_delta_calc.sql', self.snapshot_context, 'execute')
 
     @with_connection
@@ -80,7 +90,11 @@ class Snapshot:
         if self.snapshot_context.get('init_load'):
             conn.execute_templated_query('snapshot_create.sql', self.snapshot_context, 'execute')
         if self.snapshot_context.get('new_fields'):
-            conn.execute_templated_query('snapshot_add_fields.sql', self.snapshot_context, 'execute')
+            conn.execute_templated_query('snapshot_add_fields.sql', {
+                'new_fields_with_datatypes': self.snapshot_context.get('new_fields_with_datatypes'),
+                'target_schema': self.snapshot_context.get('target_schema'),
+                'table': self.snapshot_context.get('snapshot')
+            }, 'execute')
         try:
             statistics = conn.execute_templated_query('snapshot_delta_count.sql', self.snapshot_context, 'query')
         except DBOperationalError as er:

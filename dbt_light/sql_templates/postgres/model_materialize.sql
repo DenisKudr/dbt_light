@@ -8,9 +8,14 @@
         DROP VIEW IF EXISTS {{ target_schema }}.{{ model }} CASCADE;
         CREATE VIEW {{ target_schema }}.{{ model }} AS
     {% else %}
-        CREATE SCHEMA IF NOT EXISTS {{ target_schema }};
-        DROP TABLE IF EXISTS {{ target_schema }}.{{ model }} CASCADE;
-        CREATE TABLE {{ target_schema }}.{{ model }} AS
+        {% if not model_exist %}
+            CREATE SCHEMA IF NOT EXISTS {{ target_schema }};
+            DROP TABLE IF EXISTS {{ target_schema }}.{{ model }} CASCADE;
+            CREATE TABLE {{ target_schema }}.{{ model }} AS
+        {% else %}
+            TRUNCATE TABLE {{ target_schema }}.{{ model }};
+            INSERT INTO {{ target_schema }}.{{ model }} ({{ model_fields | join(', ') }})
+        {% endif %}
     {% endif %}
 {% endif %}
 {{ model_sql }};

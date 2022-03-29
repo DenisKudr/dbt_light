@@ -1,4 +1,5 @@
 CREATE SCHEMA IF NOT EXISTS {{ target_schema }};
+DROP TABLE IF EXISTS {{ target_schema }}.{{ snapshot }} CASCADE;
 CREATE TABLE {{ target_schema }}.{{ snapshot }} AS
 SELECT
     {% for field  in key_fields + all_data_fields %}

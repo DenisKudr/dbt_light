@@ -3,7 +3,7 @@ from dbt_light.db_connection.database_connection import DatabaseConnection
 from dbt_light.model import Model
 
 
-class TestScd2Loader(TestCase):
+class TestModel(TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -15,21 +15,23 @@ class TestScd2Loader(TestCase):
                 setup = f.read()
             db.execute(setup)
 
-    def execute_test(self, models: list, mode: str):
+    def execute_test(self, models: list, mode: str, full_refresh: bool = False):
         with DatabaseConnection(self.dbt_test_project) as db:
             with open(f"sql/{db.config['adapter']}/model_{mode}.sql", 'r') as f:
                 setup = f.read()
             db.execute(setup)
 
         for model in models:
-            mod = Model(model, self.dbt_test_project)
+            mod = Model(model, self.dbt_test_project, full_refresh=full_refresh)
             mod.materialize()
 
-    def test_snap(self):
+    def test_model(self):
         with self.subTest():
             self.execute_test(self.models, 'init')
         with self.subTest():
             self.execute_test(self.models, 'incr')
+        with self.subTest():
+            self.execute_test(self.models, 'init', True)
         # TODO: add asserts
 
 

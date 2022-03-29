@@ -1,9 +1,26 @@
 {% if delta_table == "temp_delta_table" %}
     CREATE TEMPORARY TABLE {{ delta_table }} as
 {% else %}
-    CREATE SCHEMA IF NOT EXISTS {{ delta_schema }};
-    DROP TABLE if exists {{ delta_schema }}.{{ delta_table }};
-    CREATE TABLE {{ delta_schema }}.{{ delta_table }} AS
+    {% if init_load %}
+        CREATE SCHEMA IF NOT EXISTS {{ delta_schema }};
+        DROP TABLE if exists {{ delta_schema }}.{{ delta_table }} CASCADE;
+        CREATE TABLE {{ delta_schema }}.{{ delta_table }} AS
+    {% else %}
+        TRUNCATE TABLE {{ delta_schema }}.{{ delta_table }};
+        INSERT INTO {{ delta_schema }}.{{ delta_table }} (
+            {% for field  in key_fields + all_data_fields + new_fields %}
+                {{ field }},
+            {% endfor %}
+            {% if updated_at_field %}
+                {{ updated_at_field }},
+            {% endif %}
+            {{ processed_field }},
+            {% if strategy == "check" and (hash_diff_field_exist or data_fields) %}
+                {{ hash_diff_field }},
+            {% endif %}
+            diff_type
+        )
+    {% endif %}
 {% endif %}
 {% if init_load %}
     SELECT
