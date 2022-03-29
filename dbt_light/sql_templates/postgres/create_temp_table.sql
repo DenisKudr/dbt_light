@@ -1,0 +1,1 @@
+CREATE TEMPORARY TABLE {{ model }} AS {{ model_sql }};

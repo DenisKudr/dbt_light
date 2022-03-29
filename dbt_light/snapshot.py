@@ -16,23 +16,22 @@ class Snapshot:
         model = self.snapshot_context.get('model_sql')
         if model:
             rendered_model = self.context.render_model(model)
-            conn.execute_templated_query('model_materialize.sql', {'model_sql': rendered_model,
-                                                                   'model': self.snapshot_context['input_table'],
-                                                                   'materialization': 'temp_table'
+            conn.execute_templated_query('create_temp_table.sql', {'model_sql': rendered_model,
+                                                                   'model': self.snapshot_context['input_table']
                                                                    }, 'execute')
-            self.snapshot_context['source_schema'] = conn.execute_templated_query('snapshot_get_temp_schema.sql',
+            self.snapshot_context['source_schema'] = conn.execute_templated_query('get_temp_schema.sql',
                                                                                   {}, 'query')[0][0]
 
-        input_fields = conn.execute_templated_query('model_get_fields.sql',
-                                                    {'target_schema': self.snapshot_context['source_schema'],
+        input_fields = conn.execute_templated_query('get_fields.sql',
+                                                    {'schema': self.snapshot_context['source_schema'],
                                                      'model': self.snapshot_context['input_table'],
                                                      'include_data_types': True}, 'query')
         if len(input_fields) == 0:
             raise InputTableNotFound(f"{self.snapshot_context.get('source_schema')}.{self.snapshot_context.get('input_table')}")
 
         if not self.full_refresh:
-            snapshot_fields = conn.execute_templated_query('model_get_fields.sql',
-                                                           {'target_schema': self.snapshot_context['target_schema'],
+            snapshot_fields = conn.execute_templated_query('get_fields.sql',
+                                                           {'schema': self.snapshot_context['target_schema'],
                                                             'model': self.snapshot_context['snapshot']},
                                                            'query')
             init_load = True if len(snapshot_fields) == 0 else False
@@ -78,10 +77,10 @@ class Snapshot:
     def delta_calc(self, conn: DatabaseConnection = None) -> None:
         self.prepare_context(conn)
         if self.snapshot_context.get('new_fields') and self.snapshot_context.get('delta_table') != 'temp_delta_table':
-            conn.execute_templated_query('snapshot_add_fields.sql', {
+            conn.execute_templated_query('add_fields.sql', {
                 'new_fields_with_datatypes': self.snapshot_context.get('new_fields_with_datatypes'),
-                'target_schema': self.snapshot_context.get('delta_schema'),
-                'table': self.snapshot_context.get('delta_table')
+                'schema': self.snapshot_context.get('delta_schema'),
+                'model': self.snapshot_context.get('delta_table')
             }, 'execute')
         conn.execute_templated_query('snapshot_delta_calc.sql', self.snapshot_context, 'execute')
 
@@ -90,10 +89,10 @@ class Snapshot:
         if self.snapshot_context.get('init_load'):
             conn.execute_templated_query('snapshot_create.sql', self.snapshot_context, 'execute')
         if self.snapshot_context.get('new_fields'):
-            conn.execute_templated_query('snapshot_add_fields.sql', {
+            conn.execute_templated_query('add_fields.sql', {
                 'new_fields_with_datatypes': self.snapshot_context.get('new_fields_with_datatypes'),
-                'target_schema': self.snapshot_context.get('target_schema'),
-                'table': self.snapshot_context.get('snapshot')
+                'schema': self.snapshot_context.get('target_schema'),
+                'model': self.snapshot_context.get('snapshot')
             }, 'execute')
         try:
             statistics = conn.execute_templated_query('snapshot_delta_count.sql', self.snapshot_context, 'query')

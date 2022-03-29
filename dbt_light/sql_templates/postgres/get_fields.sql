@@ -3,5 +3,5 @@ SELECT upper(column_name)
     , data_type, character_maximum_length
 {% endif %}
 FROM information_schema.columns
-WHERE  upper(table_schema) = upper('{{ target_schema }}')
+WHERE  upper(table_schema) = upper('{{ schema }}')
 and upper(table_name) = upper('{{ model }}')

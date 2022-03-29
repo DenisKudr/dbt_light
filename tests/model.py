@@ -32,6 +32,8 @@ class TestModel(TestCase):
             self.execute_test(self.models, 'incr')
         with self.subTest():
             self.execute_test(self.models, 'init', True)
+        with self.subTest():
+            self.execute_test(self.models, 'incr_new_fields')
         # TODO: add asserts
 
 
