@@ -56,13 +56,16 @@ class Context:
     def schemas_context(self) -> dict:
         models = self.model_context.models
         snapshots = self.snapshot_context.snapshots
-        schemas_context = {}
+        delta_tables = {value['delta_table']: {'target_schema': value['delta_schema']} for value in
+                        [snap for snap in self.snapshot_context.snapshots.values()
+                         if snap['delta_table'] != 'temp_delta_table']}
 
-        for entity_dict, entity_name in zip([models, snapshots], ['model', 'snapshot']):
+        schemas_context = {}
+        for entity_dict in [models, snapshots, delta_tables]:
             for entity_key, entity_value in entity_dict.items():
                 if not schemas_context.get(entity_key):
                     schemas_context.update({
-                        entity_key : f"{entity_value['target_schema']}.{entity_key}"
+                        entity_key: f"{entity_value['target_schema']}.{entity_key}"
                     })
                 else:
                     raise DuplicateModelsError(entity_key, [entity_value['target_schema'],
