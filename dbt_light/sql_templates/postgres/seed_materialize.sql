@@ -1,0 +1,1 @@
+COPY {{ target_schema }}.{{ seed }} FROM STDIN DELIMITER '{{ delimiter }}' CSV HEADER

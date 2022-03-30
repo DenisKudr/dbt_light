@@ -88,6 +88,14 @@ class DuplicateModelsError(DbtLightError):
                          f'{model} in schemas: {schemas}')
 
 
+class DuplicateSeedsError(DbtLightError):
+    """" Raise if there are multiple seeds with the same name """
+
+    def __init__(self, seed, schemas):
+        super().__init__(f'There are more than one seed defined with the name '
+                         f'{seed} in schemas: {schemas}')
+
+
 class ModelReadError(DbtLightError):
     """" Raise if reading model failed """
 

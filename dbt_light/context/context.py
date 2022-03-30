@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import yaml
 from schema import Schema, SchemaError
+from dbt_light.context.seed_context import SeedContext
 from dbt_light.context.snapshot_context import SnapshotContext
 from dbt_light.context.model_context import ModelContext
 from dbt_light.exceptions import ConfigReadError, ConfigValidateError, DBTProjectNotFound, DuplicateModelsError, \
@@ -52,16 +53,18 @@ class Context:
         self.dbt_profile = dbt_profile
         self.model_context = ModelContext(self.dbt_profile['path'])
         self.snapshot_context = SnapshotContext(self.dbt_profile['path'])
+        self.seed_context = SeedContext(self.dbt_profile['path'])
 
     def schemas_context(self) -> dict:
         models = self.model_context.models
         snapshots = self.snapshot_context.snapshots
+        seeds = self.seed_context.seeds
         delta_tables = {value['delta_table']: {'target_schema': value['delta_schema']} for value in
                         [snap for snap in self.snapshot_context.snapshots.values()
                          if snap['delta_table'] != 'temp_delta_table']}
 
         schemas_context = {}
-        for entity_dict in [models, snapshots, delta_tables]:
+        for entity_dict in [models, snapshots, seeds, delta_tables]:
             for entity_key, entity_value in entity_dict.items():
                 if not schemas_context.get(entity_key):
                     schemas_context.update({

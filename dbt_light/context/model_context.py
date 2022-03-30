@@ -48,7 +48,8 @@ class ModelContext:
                             'model': model_name,
                             'target_schema': schema,
                             'path': model_path,
-                            'is_incremental': True if 'incremental_models' in model_path else False
+                            'is_incremental': True if 'incremental_models' in model_path else False,
+                            'materialization': 'table'
                         }
                     })
                 else:
@@ -58,7 +59,8 @@ class ModelContext:
             config_models = {}
             config = self.validate_config()
             for model in models.values():
-                model_config = {key: value for key, value in config.items() if key != 'models'}
+                model_config = model
+                model.update({key: value for key, value in config.items() if key != 'models'})
 
                 for pattern in list(filter(lambda x: x.get('pattern_name'), config['models'])):
                     if re.search(pattern['pattern_name'], model['model']):
@@ -68,7 +70,6 @@ class ModelContext:
                     if model_in_config.get('name') == model['model']:
                         model_config.update({key: value for key, value in model_in_config.items() if key != 'name'})
 
-                model_config.update(model)
                 if not config_models.get(model_config['model']):
                     config_models.update({
                         model_config['model']: model_config
@@ -82,6 +83,7 @@ class ModelContext:
     def validate_config(self) -> dict:
         models_schema = Schema({
             Optional('materialization', default='table'): Or('table', 'view'),
+            Optional('incr_key'): str,
             Optional('models'): [
                 {
                     Or("name", "pattern_name", only_one=True): str,

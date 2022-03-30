@@ -1,16 +1,18 @@
 from dbt_light.context.context import Context
 from dbt_light.db_connection.database_connection import DatabaseConnection
 from dbt_light.db_connection.with_connection import with_connection
-from dbt_light.exceptions import InputTableNotFound, DeltaTableNotFound, DBOperationalError
+from dbt_light.exceptions import InputTableNotFound, DeltaTableNotFound, DBOperationalError, SnapshotNotFound
 
 
 class Snapshot:
 
     def __init__(self, snapshot_name: str, dbt_project: str = None, full_refresh: bool = False):
         self.dbt_project = dbt_project
+        self.full_refresh = full_refresh
         self.context = Context(dbt_project)
         self.snapshot_context = self.context.snapshot_context.get_snapshot(snapshot_name)
-        self.full_refresh = full_refresh
+        if not self.snapshot_context:
+            raise SnapshotNotFound(snapshot_name)
 
     def prepare_context(self, conn: DatabaseConnection) -> None:
         model = self.snapshot_context.get('model_sql')

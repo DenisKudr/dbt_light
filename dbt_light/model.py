@@ -1,15 +1,18 @@
 from dbt_light.context.context import Context
 from dbt_light.db_connection.with_connection import with_connection
 from dbt_light.db_connection.database_connection import DatabaseConnection
+from dbt_light.exceptions import ModelNotFound
 
 
 class Model:
 
     def __init__(self, model_name: str, dbt_project: str = None, full_refresh: bool = False):
         self.dbt_project = dbt_project
+        self.full_refresh = full_refresh
         self.context = Context(dbt_project)
         self.model_context = self.context.model_context.get_model(model_name)
-        self.full_refresh = full_refresh
+        if not self.model_context:
+            raise ModelNotFound(model_name)
 
     @with_connection
     def materialize(self, conn: DatabaseConnection) -> None:
@@ -67,6 +70,3 @@ class Model:
             'model_sql': rendered_model
         })
         conn.execute_templated_query('model_materialize.sql', self.model_context, 'execute')
-
-f = Model('vw_model')
-f.materialize()

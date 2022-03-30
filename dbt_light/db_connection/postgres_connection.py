@@ -1,3 +1,4 @@
+from typing import TextIO
 import psycopg2
 
 
@@ -39,3 +40,6 @@ class PostgresConnection:
     def query(self, sql: str, params: tuple = None) -> list:
         self.cursor.execute(sql, params or ())
         return self.fetchall()
+
+    def copy(self, command: str, file: TextIO):
+        self.cursor.copy_expert(command, file)
