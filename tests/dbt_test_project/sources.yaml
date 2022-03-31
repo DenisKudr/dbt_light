@@ -1,0 +1,12 @@
+sources:
+  - name: test_source
+    description: Schema for testing
+    schema: etl_stg
+    quoting: False
+    tables:
+      - name: model_in
+        description: Model for testing 
+      - name: check_in
+        description: Model for snapshotting
+      - name: check_in_no_data 
+        description: Model for snapshotting without data

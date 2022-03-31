@@ -24,6 +24,21 @@ class DuplicateSnapshotsError(DbtLightError):
                          f'{snapshot} in {snapshots_config_path}')
 
 
+class DuplicateSourcesError(DbtLightError):
+    """" Raise if there are multiple sources with the same name in config """
+
+    def __init__(self, source, source_config_path):
+        super().__init__(f'There are more than one sources defined with the name '
+                         f'{source} in {source_config_path}')
+
+
+class DuplicateTablesInSourceError(DbtLightError):
+    """" Raise if there are multiple tables with the same name in source """
+
+    def __init__(self, table, source, source_config_path):
+        super().__init__(f'There are more than one table defined with the name '
+                         f'{table} for source {source} in {source_config_path}')
+
 class DBTProjectNotFound(DbtLightError):
     """" Raise if dbt project cannot be located """
 

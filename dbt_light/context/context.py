@@ -6,6 +6,7 @@ from schema import Schema, SchemaError
 from dbt_light.context.seed_context import SeedContext
 from dbt_light.context.snapshot_context import SnapshotContext
 from dbt_light.context.model_context import ModelContext
+from dbt_light.context.source_context import SourceContext
 from dbt_light.exceptions import ConfigReadError, ConfigValidateError, DBTProjectNotFound, DuplicateModelsError, \
     ModelRenderError
 from jinja2 import TemplateError, TemplateSyntaxError
@@ -55,11 +56,13 @@ class Context:
         self.model_context = ModelContext(self.dbt_profile['path'])
         self.snapshot_context = SnapshotContext(self.dbt_profile['path'])
         self.seed_context = SeedContext(self.dbt_profile['path'])
+        self.source_context = SourceContext(self.dbt_profile['path'])
 
     def schemas_context(self) -> dict:
         models = self.model_context.models
         snapshots = self.snapshot_context.snapshots
         seeds = self.seed_context.seeds
+        sources = self.source_context.sources
         delta_tables = {value['delta_table']: {'target_schema': value['delta_schema']} for value in
                         [snap for snap in self.snapshot_context.snapshots.values()
                          if snap['delta_table'] != 'temp_delta_table']}
@@ -74,6 +77,7 @@ class Context:
                 else:
                     raise DuplicateModelsError(entity_key, [entity_value['target_schema'],
                                                             schemas_context.get(entity_key).split('.')[0]])
+        schemas_context.update(sources)
 
         return schemas_context
 
