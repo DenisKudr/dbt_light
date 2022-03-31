@@ -9,7 +9,7 @@ class TestModel(TestCase):
     def setUpClass(cls):
         dbt_test_project = 'dbt_test_project'
         cls.dbt_test_project = dbt_test_project
-        cls.models = ['usual_model', 'incr_model', 'vw_model']
+        cls.models = ['usual_model', 'model_with_macro', 'incr_model', 'vw_model']
         with DatabaseConnection(dbt_test_project) as db:
             with open(f"sql/{db.config['adapter']}/model_init_drop.sql", 'r') as f:
                 setup = f.read()

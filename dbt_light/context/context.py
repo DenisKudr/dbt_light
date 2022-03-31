@@ -1,4 +1,5 @@
 import os
+from glob import glob
 from pathlib import Path
 import yaml
 from schema import Schema, SchemaError
@@ -76,10 +77,19 @@ class Context:
 
         return schemas_context
 
-    def render_model(self, model: str, context: dict = None) -> str:
+    def macro_context(self, model: str) -> str:
+        macros_paths = glob(f"{self.dbt_profile['path']}/macros/*.sql")
+        macros_sql = []
+        for macro in macros_paths:
+            macro_sql = Path(macro).read_text()
+            macros_sql.append(macro_sql)
+        macros = '\n'.join(macros_sql)
+        return macros + model
 
+    def render_model(self, model: str, context: dict = None) -> str:
         schemas_context = self.schemas_context()
-        template = NativeEnvironment().from_string(model)
+        model_with_macros = self.macro_context(model)
+        template = NativeEnvironment().from_string(model_with_macros)
         if context:
             schemas_context.update(context)
         try:
