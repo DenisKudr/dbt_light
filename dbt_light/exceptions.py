@@ -45,6 +45,17 @@ class DBTProjectNotFound(DbtLightError):
     def __init__(self, msg):
         super().__init__(msg)
 
+class MacroNotFound(DbtLightError):
+    """" Raise if there is no macro in a file with name of the file """
+
+    def __init__(self, macro, macro_path):
+        super().__init__(f"No macro {macro} in {macro_path}")
+
+class DuplicateMacroError(DbtLightError):
+    """" Raise if there are duplicate macros in dbt_light project """
+
+    def __init__(self, macro, macro_path):
+        super().__init__(f"Duplicate macro {macro} in {macro_path}")
 
 class ConfigReadError(DbtLightError):
     """" Raise if reading config in dbt project failed """

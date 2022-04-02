@@ -8,7 +8,7 @@ from dbt_light.context.snapshot_context import SnapshotContext
 from dbt_light.context.model_context import ModelContext
 from dbt_light.context.source_context import SourceContext
 from dbt_light.exceptions import ConfigReadError, ConfigValidateError, DBTProjectNotFound, DuplicateModelsError, \
-    ModelRenderError
+    ModelRenderError, MacroNotFound, DuplicateMacroError
 from jinja2 import TemplateError, TemplateSyntaxError
 from jinja2.nativetypes import NativeEnvironment
 
@@ -57,8 +57,15 @@ class Context:
         self.snapshot_context = SnapshotContext(self.dbt_profile['path'])
         self.seed_context = SeedContext(self.dbt_profile['path'])
         self.source_context = SourceContext(self.dbt_profile['path'])
+        self.env = self.create_jinja_env()
 
-    def schemas_context(self) -> dict:
+    def create_jinja_env(self) -> NativeEnvironment:
+        env = NativeEnvironment()
+        self.schemas_context(env)
+        self.macro_context(env)
+        return env
+
+    def schemas_context(self, env: NativeEnvironment) -> None:
         models = self.model_context.models
         snapshots = self.snapshot_context.snapshots
         seeds = self.seed_context.seeds
@@ -67,37 +74,33 @@ class Context:
                         [snap for snap in self.snapshot_context.snapshots.values()
                          if snap['delta_table'] != 'temp_delta_table']}
 
-        schemas_context = {}
         for entity_dict in [models, snapshots, seeds, delta_tables]:
             for entity_key, entity_value in entity_dict.items():
-                if not schemas_context.get(entity_key):
-                    schemas_context.update({
-                        entity_key: f"{entity_value['target_schema']}.{entity_key}"
-                    })
+                if not env.globals.get(entity_key):
+                    env.globals[entity_key] = f"{entity_value['target_schema']}.{entity_key}"
                 else:
                     raise DuplicateModelsError(entity_key, [entity_value['target_schema'],
-                                                            schemas_context.get(entity_key).split('.')[0]])
-        schemas_context.update(sources)
+                                                            env.globals[entity_key].split('.')[0]])
+        env.globals.update(sources)
 
-        return schemas_context
-
-    def macro_context(self, model: str) -> str:
+    def macro_context(self, env: NativeEnvironment) -> None:
         macros_paths = glob(f"{self.dbt_profile['path']}/macros/*.sql")
-        macros_sql = []
         for macro in macros_paths:
+            macro_name = Path(macro).stem
             macro_sql = Path(macro).read_text()
-            macros_sql.append(macro_sql)
-        macros = '\n'.join(macros_sql)
-        return macros + model
+            macro_template = env.from_string(macro_sql)
+            if not env.globals.get(macro_name):
+                try:
+                    env.globals[macro_name] = getattr(macro_template.module, macro_name)
+                except AttributeError:
+                    raise MacroNotFound(macro_name, macro)
+            else:
+                raise DuplicateMacroError(macro_name, macro)
 
     def render_model(self, model: str, context: dict = None) -> str:
-        schemas_context = self.schemas_context()
-        model_with_macros = self.macro_context(model)
-        template = NativeEnvironment().from_string(model_with_macros)
-        if context:
-            schemas_context.update(context)
+        template = self.env.from_string(model)
         try:
-            rendered = template.render(schemas_context)
+            rendered = template.render(context)
         except (TemplateError, TemplateSyntaxError) as er:
             raise ModelRenderError(model) from er
 
