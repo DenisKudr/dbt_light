@@ -1,5 +1,6 @@
 from unittest import TestCase, main
 from dbt_light.db_connection.database_connection import DatabaseConnection
+from dbt_light.exceptions import TestsFailed
 from dbt_light.model import Model
 
 
@@ -23,7 +24,13 @@ class TestModel(TestCase):
 
         for model in models:
             mod = Model(model, self.dbt_test_project, full_refresh=full_refresh)
-            mod.materialize()
+            try:
+                mod.materialize()
+            except TestsFailed as er:
+                if mode == 'incr_failed_tests':
+                    print(str(er))
+                else:
+                    raise Exception('Failed') from er
 
     def test_model(self):
         with self.subTest():
@@ -34,6 +41,8 @@ class TestModel(TestCase):
             self.execute_test(self.models, 'init', True)
         with self.subTest():
             self.execute_test(self.models, 'incr_new_fields')
+        with self.subTest():
+            self.execute_test(self.models, 'incr_failed_tests')
         # TODO: add asserts
 
 

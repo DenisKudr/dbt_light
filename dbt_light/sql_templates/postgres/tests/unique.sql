@@ -1,0 +1,1 @@
+SELECT exists(SELECT count(*) FROM {{ model }} GROUP BY {{ column }} HAVING count(*) > 1)

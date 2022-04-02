@@ -1,0 +1,1 @@
+SELECT exists(SELECT {{ column }} FROM {{ model }} WHERE {{ column }} is null)

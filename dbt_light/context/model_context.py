@@ -60,15 +60,27 @@ class ModelContext:
             config = self.validate_config()
             for model in models.values():
                 model_config = model
-                model.update({key: value for key, value in config.items() if key != 'models'})
+                model_config['tests'] = {}
+                model_config.update({key: value for key, value in config.items() if key != 'models'})
 
                 for pattern in list(filter(lambda x: x.get('pattern_name'), config['models'])):
                     if re.search(pattern['pattern_name'], model['model']):
-                        model_config.update({key: value for key, value in pattern.items() if key != 'pattern_name'})
+                        model_config.update({key: value for key, value in pattern.items()
+                                             if key not in ('pattern_name', 'columns')})
+                        if pattern.get('columns'):
+                            model_config['tests'] = {col['name']: col['tests'] for col in pattern['columns']}
 
                 for model_in_config in config['models']:
                     if model_in_config.get('name') == model['model']:
-                        model_config.update({key: value for key, value in model_in_config.items() if key != 'name'})
+                        model_config.update({key: value for key, value in model_in_config.items()
+                                             if key not in ('name', 'columns')})
+
+                        if model_in_config.get('columns'):
+                            for col in model_in_config['columns']:
+                                if model_config['tests'].get(col['name']):
+                                    model_config['tests'][col['name']] = model_config['tests'][col['name']] + col['tests']
+                                else:
+                                    model_config['tests'][col['name']] = col['tests']
 
                 if not config_models.get(model_config['model']):
                     config_models.update({
@@ -83,12 +95,22 @@ class ModelContext:
     def validate_config(self) -> dict:
         models_schema = Schema({
             Optional('materialization', default='table'): Or('table', 'view'),
+            Optional('on_test_fail', default='error'): Or('error', 'error_with_rollback'),
             Optional('incr_key'): str,
             Optional('models'): [
                 {
-                    Or("name", "pattern_name", only_one=True): str,
+                    Or('name', 'pattern_name', only_one=True): str,
+                    Optional('on_test_fail', default='error'): Or('error', 'error_with_rollback'),
+                    Optional('description'): str,
                     Optional('materialization'): str,
-                    Optional('incr_key'): str
+                    Optional('incr_key'): str,
+                    Optional('columns'): [{
+                        'name': str,
+                        Optional('description'): str,
+                        Optional('tests'): [
+                            Or(str, dict)
+                        ]
+                    }]
                 }
             ]
         })

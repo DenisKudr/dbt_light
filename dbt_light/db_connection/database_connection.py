@@ -32,6 +32,9 @@ class DatabaseConnection:
     def copy(self, sql: str, file: TextIO):
         self.db_conn.copy(sql, file)
 
+    def rollback(self):
+        self.db_conn.rollback()
+
     def execute_templated_query(self, template_name: str, context: dict,
                                 operation_type: Literal["query", "execute", "copy"],
                                 file: TextIO = None) -> Union[list, None]:

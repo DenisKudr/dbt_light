@@ -1,7 +1,8 @@
 from dbt_light.context.context import Context
 from dbt_light.db_connection.with_connection import with_connection
 from dbt_light.db_connection.database_connection import DatabaseConnection
-from dbt_light.exceptions import ModelNotFound
+from dbt_light.exceptions import ModelNotFound, TestsFailed
+from dbt_light.test import Test
 
 
 class Model:
@@ -22,7 +23,7 @@ class Model:
             target_fields = conn.execute_templated_query('get_fields.sql',
                                                          {
                                                              'schema': self.model_context['target_schema'],
-                                                             'model': self.model_context.get('model')
+                                                             'model': self.model_context['model']
                                                          }, 'query')
         else:
             target_fields = []
@@ -34,12 +35,13 @@ class Model:
         # create temporary table
         temp_table_context = {
             'model_exist': model_exist,
-            'this': f"{self.model_context.get('target_schema')}.{self.model_context.get('model')}"
+            'this': f"{self.model_context['target_schema']}.{self.model_context['model']}"
         }
-        rendered_model = self.context.render_model(self.model_context.get('model_sql'),
+
+        rendered_model = self.context.render_model(self.model_context['model_sql'],
                                                    temp_table_context)
         temp_table_context.update({
-            'model': self.model_context.get('model'),
+            'model': self.model_context['model'],
             'model_sql': rendered_model
         })
         conn.execute_templated_query('create_temp_table.sql', temp_table_context, 'execute')
@@ -70,3 +72,7 @@ class Model:
             'model_sql': rendered_model
         })
         conn.execute_templated_query('model_materialize.sql', self.model_context, 'execute')
+
+        if self.model_context.get('tests'):
+            Test(conn, f"{self.model_context['target_schema']}.{self.model_context['model']}",
+                 self.model_context['tests']).run(self.model_context['on_test_fail'])

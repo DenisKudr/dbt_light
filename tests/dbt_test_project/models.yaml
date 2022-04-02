@@ -1,6 +1,25 @@
 materialization: table
 models:
+  - pattern_name: "vw_.*"
+    materialization: view
+  - pattern_name: "usual_.*"
+    on_test_fail: error_with_rollback
+    columns:
+      - name: source_system_cd
+        description: Source System Code
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["ODP"]
   - name: incr_model
     incr_key: incr_id
-  - pattern_name: "vw_*"
-    materialization: view
+  - name: model_with_macro
+    on_test_fail: error
+    columns:
+      - name: first_name
+        tests:
+          - not_null
+      - name: row_id
+        tests:
+          - unique
+

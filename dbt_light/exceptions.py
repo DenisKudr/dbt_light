@@ -39,11 +39,13 @@ class DuplicateTablesInSourceError(DbtLightError):
         super().__init__(f'There are more than one table defined with the name '
                          f'{table} for source {source} in {source_config_path}')
 
+
 class DBTProjectNotFound(DbtLightError):
     """" Raise if dbt project cannot be located """
 
     def __init__(self, msg):
         super().__init__(msg)
+
 
 class MacroNotFound(DbtLightError):
     """" Raise if there is no macro in a file with name of the file """
@@ -51,11 +53,13 @@ class MacroNotFound(DbtLightError):
     def __init__(self, macro, macro_path):
         super().__init__(f"No macro {macro} in {macro_path}")
 
+
 class DuplicateMacroError(DbtLightError):
     """" Raise if there are duplicate macros in dbt_light project """
 
     def __init__(self, macro, macro_path):
         super().__init__(f"Duplicate macro {macro} in {macro_path}")
+
 
 class ConfigReadError(DbtLightError):
     """" Raise if reading config in dbt project failed """
@@ -134,3 +138,13 @@ class ModelRenderError(DbtLightError):
 
     def __init__(self, model):
         super().__init__(f"Can't render model {model}")
+
+
+class TestsFailed(DbtLightError):
+    """" Raise if model tests failed """
+
+    def __init__(self, model, tests):
+        msg = [f"Tests failed for model {model}"]
+        for column, test_names in tests.items():
+            msg.append(f"\nFor column {column} failed tests: {', '.join(test_names)}")
+        super().__init__(''.join(msg))

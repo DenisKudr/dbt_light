@@ -22,6 +22,9 @@ class PostgresConnection:
     def commit(self) -> None:
         self.connection.commit()
 
+    def rollback(self) -> None:
+        self.connection.rollback()
+
     def close(self, commit: bool = True) -> None:
         if commit:
             self.commit()
