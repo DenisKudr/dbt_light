@@ -110,7 +110,8 @@ class Snapshot:
 
         if self.snapshot_context.get('tests'):
             Test(conn, f"{self.snapshot_context['target_schema']}.{self.snapshot_context['snapshot']}",
-                 self.snapshot_context['tests']).run(self.snapshot_context['on_test_fail'], self.snapshot_context['start_field'])
+                 self.snapshot_context['tests'], self.context,
+                 self.snapshot_context['start_field']).run(self.snapshot_context['on_test_fail'])
 
     @with_connection
     def materialize(self, conn: DatabaseConnection = None) -> None:

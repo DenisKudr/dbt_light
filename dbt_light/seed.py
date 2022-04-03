@@ -46,5 +46,5 @@ class Seed:
             conn.execute_templated_query('seed_materialize.sql', self.seed_context, 'copy', seed)
         if self.seed_context.get('tests'):
             Test(conn, f"{self.seed_context['target_schema']}.{self.seed_context['seed']}",
-                 self.seed_context['tests']).run(self.seed_context['on_test_fail'])
+                 self.seed_context['tests'], self.context).run(self.seed_context['on_test_fail'])
 

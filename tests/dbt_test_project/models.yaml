@@ -22,4 +22,9 @@ models:
       - name: row_id
         tests:
           - unique
+      - name: customer_bk
+        tests:
+          - relationships:
+              to: usual_model
+              field: customer_bk
 

@@ -75,4 +75,4 @@ class Model:
 
         if self.model_context.get('tests'):
             Test(conn, f"{self.model_context['target_schema']}.{self.model_context['model']}",
-                 self.model_context['tests']).run(self.model_context['on_test_fail'])
+                 self.model_context['tests'], self.context).run(self.model_context['on_test_fail'])

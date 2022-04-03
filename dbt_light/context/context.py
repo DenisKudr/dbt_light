@@ -61,11 +61,11 @@ class Context:
 
     def create_jinja_env(self) -> NativeEnvironment:
         env = NativeEnvironment()
-        self.schemas_context(env)
-        self.macro_context(env)
+        env.globals.update(self.schemas_context())
+        env.globals.update(self.macro_context(env))
         return env
 
-    def schemas_context(self, env: NativeEnvironment) -> None:
+    def schemas_context(self) -> dict:
         models = self.model_context.models
         snapshots = self.snapshot_context.snapshots
         seeds = self.seed_context.seeds
@@ -73,29 +73,35 @@ class Context:
         delta_tables = {value['delta_table']: {'target_schema': value['delta_schema']} for value in
                         [snap for snap in self.snapshot_context.snapshots.values()
                          if snap['delta_table'] != 'temp_delta_table']}
-
+        schemas_context = {}
         for entity_dict in [models, snapshots, seeds, delta_tables]:
             for entity_key, entity_value in entity_dict.items():
-                if not env.globals.get(entity_key):
-                    env.globals[entity_key] = f"{entity_value['target_schema']}.{entity_key}"
+                if not schemas_context.get(entity_key):
+                    schemas_context.update({
+                        entity_key: f"{entity_value['target_schema']}.{entity_key}"
+                    })
                 else:
                     raise DuplicateModelsError(entity_key, [entity_value['target_schema'],
-                                                            env.globals[entity_key].split('.')[0]])
-        env.globals.update(sources)
+                                                            schemas_context.get(entity_key).split('.')[0]])
+        schemas_context.update(sources)
 
-    def macro_context(self, env: NativeEnvironment) -> None:
+        return schemas_context
+
+    def macro_context(self, env: NativeEnvironment) -> dict:
         macros_paths = glob(f"{self.dbt_profile['path']}/macros/*.sql")
+        macros = {}
         for macro in macros_paths:
             macro_name = Path(macro).stem
             macro_sql = Path(macro).read_text()
             macro_template = env.from_string(macro_sql)
-            if not env.globals.get(macro_name):
+            if not macros.get(macro_name):
                 try:
-                    env.globals[macro_name] = getattr(macro_template.module, macro_name)
+                    macros[macro_name] = getattr(macro_template.module, macro_name)
                 except AttributeError:
                     raise MacroNotFound(macro_name, macro)
             else:
                 raise DuplicateMacroError(macro_name, macro)
+        return macros
 
     def render_model(self, model: str, context: dict = None) -> str:
         template = self.env.from_string(model)
