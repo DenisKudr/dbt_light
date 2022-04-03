@@ -46,15 +46,26 @@ class SeedContext:
             config = self.validate_config()
             for seed in seeds.values():
                 seed_config = seed
-                seed.update({key: value for key, value in config.items() if key != 'seeds'})
+                seed_config['tests'] = {}
+                seed_config.update({key: value for key, value in config.items() if key != 'seeds'})
 
                 for pattern in list(filter(lambda x: x.get('pattern_name'), config['seeds'])):
                     if re.search(pattern['pattern_name'], seed['seed']):
                         seed_config.update({key: value for key, value in pattern.items() if key != 'pattern_name'})
+                        if pattern.get('columns'):
+                            seed_config['tests'] = {col['name']: col['tests'] for col in pattern['columns']}
 
                 for seed_in_config in config['seeds']:
                     if seed_in_config.get('name') == seed['seed']:
-                        seed_config.update({key: value for key, value in seed_in_config.items() if key != 'name'})
+                        seed_config.update({key: value for key, value in seed_in_config.items()
+                                            if key not in ('name', 'columns')})
+
+                        for col in seed_in_config['columns']:
+                            seed_config['columns'] = {col['name']: col['type'] for col in seed_in_config['columns']}
+                            if seed_config['tests'].get(col['name']) and col.get('tests'):
+                                seed_config['tests'][col['name']] = seed_config['tests'][col['name']] + col['tests']
+                            elif col.get('tests'):
+                                seed_config['tests'][col['name']] = col['tests']
 
                 if not config_seeds.get(seed_config['seed']):
                     config_seeds.update({
@@ -69,12 +80,19 @@ class SeedContext:
     def validate_config(self) -> dict:
         seed_schema = Schema({
             Optional('delimiter', default=','): str,
+            Optional('on_test_fail', default='error'): Or('error', 'error_with_rollback'),
             Optional('seeds'): [{
                 Or("name", "pattern_name", only_one=True): str,
                 Optional('delimiter', default=','): str,
-                Optional('column_types'): {
-                    str: str
-                }
+                Optional('on_test_fail', default='error'): Or('error', 'error_with_rollback'),
+                'columns': [{
+                    'name': str,
+                    'type': str,
+                    Optional('description'): str,
+                    Optional('tests'): [
+                        Or(str, dict)
+                    ]
+                }]
             }]
         })
         try:

@@ -77,9 +77,9 @@ class ModelContext:
 
                         if model_in_config.get('columns'):
                             for col in model_in_config['columns']:
-                                if model_config['tests'].get(col['name']):
+                                if model_config['tests'].get(col['name']) and col.get('tests'):
                                     model_config['tests'][col['name']] = model_config['tests'][col['name']] + col['tests']
-                                else:
+                                elif col.get('tests'):
                                     model_config['tests'][col['name']] = col['tests']
 
                 if not config_models.get(model_config['model']):

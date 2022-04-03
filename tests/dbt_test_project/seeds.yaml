@@ -1,6 +1,13 @@
 delimiter: ","
 seeds:
   - name: seed
-    column_types:
-      country_code: varchar(2)
-      country_name: varchar(32)
+    on_test_fail: error_with_rollback
+    columns:
+      - name: country_code
+        type: varchar(2)
+        tests:
+          - not_null
+      - name: country_name
+        type: varchar(32)
+        tests:
+          - unique

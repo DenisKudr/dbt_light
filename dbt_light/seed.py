@@ -1,6 +1,7 @@
 from dbt_light.context.context import Context
 from dbt_light.db_connection.database_connection import DatabaseConnection
 from dbt_light.db_connection.with_connection import with_connection
+from dbt_light.test import Test
 
 
 class Seed:
@@ -13,18 +14,18 @@ class Seed:
 
     @with_connection
     def materialize(self, conn: DatabaseConnection):
-        if not self.full_refresh and self.seed_context.get('column_types'):
+        if not self.full_refresh:
             target_fields = conn.execute_templated_query('get_fields.sql',
                                                          {
                                                              'schema': self.seed_context['target_schema'],
-                                                             'model': self.seed_context.get('seed')
+                                                             'model': self.seed_context['seed']
                                                          }, 'query')
             seed_exist = True
         else:
             target_fields = []
             seed_exist = False
-        seed_fields = [(input_col.upper(), self.seed_context['column_types'][input_col], None) for input_col
-                       in list(self.seed_context['column_types'].keys())]
+
+        seed_fields = [(colnm.upper(), type, None) for colnm, type in list(self.seed_context['columns'].items())]
         if target_fields:
             target_fields = [column[0] for column in target_fields]
             new_fields = [input_col for input_col in seed_fields if input_col[0] not in target_fields]
@@ -43,4 +44,7 @@ class Seed:
         conn.execute_templated_query('seed_create.sql', self.seed_context, 'execute')
         with open(self.seed_context['path'], 'r') as seed:
             conn.execute_templated_query('seed_materialize.sql', self.seed_context, 'copy', seed)
+        if self.seed_context.get('tests'):
+            Test(conn, f"{self.seed_context['target_schema']}.{self.seed_context['seed']}",
+                 self.seed_context['tests']).run(self.seed_context['on_test_fail'])
 
