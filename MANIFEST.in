@@ -1,2 +1,3 @@
 include dbt_light/sql_templates/postgres/*
+include dbt_light/sql_templates/postgres/tests/*
 include tests/sql/postgres/*

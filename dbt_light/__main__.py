@@ -1,40 +1,48 @@
 import os
 import yaml
+from pathlib import Path
 
-os.mkdir(os.getcwd() + '/dbtLightProject')
-os.mkdir(os.getcwd() + '/dbtLightProject/models')
-os.mkdir(os.getcwd() + '/dbtLightProject/incremental_models')
-os.mkdir(os.getcwd() + '/dbtLightProject/snapshots')
+profiles_dir = str(Path.home()) + '/.dbt_light'
+cur_dir = os.getcwd() + '/dbt_light_project'
 
-project_yaml = {
-    'db_adapter': '',
-    'db_server': '',
-    'db_name': '',
-    'db_user': '',
-    'db_password': '',
-    'views': [
-        {
-            'schema': '',
-            'pattern': '',
-            'models': []
+if not os.path.exists(profiles_dir):
+    os.mkdir(profiles_dir)
+
+profiles_path = Path(profiles_dir + '/profiles.yaml')
+
+if not profiles_path.is_file():
+    profiles = {
+        'dbt_light_project': {
+            'path': cur_dir,
+            'adapter': 'postgres',
+            'host': 'localhost',
+            'port': 5432,
+            'user': 'postgres',
+            'pass': 'pass',
+            'dbname': 'postgres'
         }
-    ],
-    'seq_keys': [
-        {
-            'model': '',
-            'name': ''
+    }
+
+    with open(str(profiles_path), 'w') as file:
+        yaml.dump(profiles, file, default_flow_style=False, default_style=None)
+else:
+    profiles = {
+        'dbt_light_project': {
+            'path': cur_dir,
+            'adapter': 'postgres',
+            'host': 'localhost',
+            'port': 5432,
+            'user': 'postgres',
+            'pass': 'pass',
+            'dbname': 'postgres'
         }
-    ]
-}
+    }
+    with open(str(profiles_path), 'a') as file:
+        yaml.dump(profiles, file, default_flow_style=False, default_style=None)
 
-snapshots_yaml = {
-    "target_schema": '',
-    "source_schema": "",
-    "delta_schema": "",
-    "snapshots": []
-}
-
-with open(os.getcwd() + '/dbtLightProject/project.yaml', 'w') as file:
-    yaml.dump(project_yaml, file, default_flow_style=False, default_style=None)
-with open(os.getcwd() + '/dbtLightProject/snapshots.yaml', 'w') as file:
-    yaml.dump(snapshots_yaml, file, default_flow_style=False, default_style=None)
+Path(cur_dir).mkdir(exist_ok=True)
+Path(cur_dir + '/models').mkdir(exist_ok=True)
+Path(cur_dir + '/incremental_models').mkdir(exist_ok=True)
+Path(cur_dir + '/snapshots').mkdir(exist_ok=True)
+Path(cur_dir + '/seeds').mkdir(exist_ok=True)
+Path(cur_dir + '/macros').mkdir(exist_ok=True)
