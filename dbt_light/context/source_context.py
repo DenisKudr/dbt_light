@@ -10,15 +10,13 @@ class SourceContext:
         self.dbt_project_path = dbt_project_path
         self.source_config_path = f"{dbt_project_path}/sources.yaml"
         self.config = None
-        self.sources = None
         try:
             self.config = yaml.safe_load(Path(self.source_config_path).read_text())
         except FileNotFoundError:
             pass
         except (OSError, yaml.YAMLError) as er:
             raise ConfigReadError(self.source_config_path) from er
-        if self.config:
-            self.sources = self.validate_config()
+        self.sources = self.validate_config() if self.config else {}
 
     def validate_config(self) -> dict:
         source_schema = Schema({

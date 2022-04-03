@@ -13,15 +13,13 @@ class SnapshotContext:
         self.dbt_project_path = dbt_project_path
         self.snapshots_config_path = f"{dbt_project_path}/snapshots.yaml"
         self.config = None
-        self.snapshots = None
         try:
             self.config = yaml.safe_load(Path(self.snapshots_config_path).read_text())
         except FileNotFoundError:
             pass
         except (OSError, yaml.YAMLError) as er:
             raise ConfigReadError(self.snapshots_config_path) from er
-        if self.config:
-            self.snapshots = self.validate_config()
+        self.snapshots = self.validate_config() if self.config else {}
 
     def validate_config(self) -> dict:
         snapshot_schema = Schema({

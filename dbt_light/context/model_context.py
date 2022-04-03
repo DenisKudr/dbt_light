@@ -13,7 +13,6 @@ class ModelContext:
         self.dbt_project_path = dbt_project_path
         self.models_config_path = f"{dbt_project_path}/models.yaml"
         self.config = None
-        self.models = None
         try:
             self.config = yaml.safe_load(Path(self.models_config_path).read_text())
         except FileNotFoundError:
@@ -22,7 +21,7 @@ class ModelContext:
             raise ConfigReadError(self.models_config_path) from er
         self.models = self.find_models()
 
-    def find_models(self) -> Union[dict, None]:
+    def find_models(self) -> dict:
         models_schemas = [f for f in Path(f"{self.dbt_project_path}/models/").iterdir() if f.is_dir()]
         incr_models_schemas = [f for f in Path(f"{self.dbt_project_path}/incremental_models/").iterdir() if
                                f.is_dir()]
@@ -36,7 +35,7 @@ class ModelContext:
             else:
                 models_paths.update({schema: models_list})
         if not models_paths:
-            return None
+            return {}
 
         models = {}
         for schema, models_paths in models_paths.items():

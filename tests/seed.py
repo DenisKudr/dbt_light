@@ -10,10 +10,10 @@ class TestSeed(TestCase):
         cls.dbt_test_project = dbt_test_project
 
     def test_seed(self):
-        seed = Seed('seed', full_refresh=True)
+        seed = Seed('seed', self.dbt_test_project, full_refresh=True)
         seed.materialize()
 
-        seed = Seed('seed')
+        seed = Seed('seed', self.dbt_test_project)
         seed.materialize()
         # TODO: add asserts
 
