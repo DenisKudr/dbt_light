@@ -1,1 +1,5 @@
-SELECT exists(SELECT count(*) FROM {{ model }} GROUP BY {{ column }} HAVING count(*) > 1)
+SELECT exists(SELECT count(*) FROM {{ model }} GROUP BY {{ column }}
+{% if start_field %}
+, {{ start_field }}
+{% endif %}
+HAVING count(*) > 1)

@@ -41,7 +41,11 @@ class SnapshotContext:
             Optional('start_field', default='effective_from_dttm'): str,
             Optional('end_field', default='effective_to_dttm'): str,
             Optional('data_fields'): Or(str, [str]),
-            Optional('ignored_data_fields'): Or(str, [str])
+            Optional('ignored_data_fields'): Or(str, [str]),
+            Optional('tests'): {
+                Optional(str): Optional(list)
+            },
+            Optional('on_test_fail', default='error'): Or('error', 'error_with_rollback')
         })
 
         validated_snapshots = {}
@@ -49,10 +53,20 @@ class SnapshotContext:
         for snapshot in [snap for snap in self.config['snapshots'] if not snap.get('pattern_name')]:
             snapshot['snapshot'] = snapshot.pop('name')
             snapshot_config = {key: value for key, value in self.config.items() if key != 'snapshots'}
+            snapshot_config['tests'] = {}
             for pattern in list(filter(lambda x: x.get('pattern_name'), self.config['snapshots'])):
                 if re.search(pattern['pattern_name'], snapshot['snapshot']):
-                    snapshot_config.update({key: value for key, value in pattern.items() if key != 'pattern_name'})
-            snapshot_config.update(snapshot)
+                    snapshot_config.update({key: value for key, value in pattern.items() if key
+                                            not in ('pattern_name', 'columns')})
+                    if pattern.get('columns'):
+                        snapshot_config['tests'] = {col['name']: col['tests'] for col in pattern['columns']}
+            snapshot_config.update({key: value for key, value in list(snapshot.items()) if key != 'columns'})
+            if snapshot.get('columns'):
+                for col in snapshot['columns']:
+                    if snapshot_config['tests'].get(col['name']) and col.get('tests'):
+                        snapshot_config['tests'][col['name']] = snapshot_config['tests'][col['name']] + col['tests']
+                    elif col.get('tests'):
+                        snapshot_config['tests'][col['name']] = col['tests']
             try:
                 validated_snapshot_config = snapshot_schema.validate(snapshot_config)
             except SchemaError as er:

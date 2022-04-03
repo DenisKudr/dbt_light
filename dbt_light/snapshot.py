@@ -2,6 +2,7 @@ from dbt_light.context.context import Context
 from dbt_light.db_connection.database_connection import DatabaseConnection
 from dbt_light.db_connection.with_connection import with_connection
 from dbt_light.exceptions import InputTableNotFound, DeltaTableNotFound, DBOperationalError, SnapshotNotFound
+from dbt_light.test import Test
 
 
 class Snapshot:
@@ -17,7 +18,7 @@ class Snapshot:
     def prepare_context(self, conn: DatabaseConnection) -> None:
         model = self.snapshot_context.get('model_sql')
         if model:
-            rendered_model = self.context.render_model(model)
+            rendered_model = self.context.render_model(model, {})
             conn.execute_templated_query('create_temp_table.sql', {'model_sql': rendered_model,
                                                                    'model': self.snapshot_context['input_table']
                                                                    }, 'execute')
@@ -107,8 +108,11 @@ class Snapshot:
         if new_objects or new_values:
             conn.execute_templated_query('snapshot_insert.sql', self.snapshot_context, 'execute')
 
+        if self.snapshot_context.get('tests'):
+            Test(conn, f"{self.snapshot_context['target_schema']}.{self.snapshot_context['snapshot']}",
+                 self.snapshot_context['tests']).run(self.snapshot_context['on_test_fail'], self.snapshot_context['start_field'])
+
     @with_connection
     def materialize(self, conn: DatabaseConnection = None) -> None:
         self.delta_calc(conn=conn)
         self.delta_apply(conn=conn)
-

@@ -105,5 +105,3 @@ class Context:
             raise ModelRenderError(model) from er
 
         return rendered
-
-f = Context().seed_context

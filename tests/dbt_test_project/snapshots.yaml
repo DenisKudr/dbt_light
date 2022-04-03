@@ -12,6 +12,16 @@ snapshots:
     key_fields: id_field
     updated_at_field: updated_at_field
     ignored_data_fields: ignored_field
+    on_test_fail: error
+    columns:
+      - name: id_field
+        tests:
+          - not_null
+          - unique
+      - name: ignored_field
+        tests:
+          - accepted_values:
+              values: ["ODP", "OD"]
   - name: snap_check_no_delta_table
     strategy: check
     max_dttm: 5999-12-31
