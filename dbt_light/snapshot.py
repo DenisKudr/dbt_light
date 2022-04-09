@@ -1,7 +1,8 @@
 from dbt_light.context.context import Context
 from dbt_light.db_connection.database_connection import DatabaseConnection
 from dbt_light.db_connection.with_connection import with_connection
-from dbt_light.exceptions import InputTableNotFound, DeltaTableNotFound, DBOperationalError, SnapshotNotFound
+from dbt_light.exceptions import InputTableNotFound, DeltaTableNotFound, DBOperationalError, SnapshotNotFound, \
+    NoInputSpecifiedError
 from dbt_light.test import Test
 
 
@@ -24,6 +25,23 @@ class Snapshot:
                                                                    }, 'execute')
             self.snapshot_context['source_schema'] = conn.execute_templated_query('get_temp_schema.sql',
                                                                                   {}, 'query')[0][0]
+        else:
+            schemas_context = self.context.schemas_context()
+            input_table = self.snapshot_context['model']
+            if len(input_table.split('.')) > 1:
+                source = input_table.split('.')[0]
+                input_table = input_table.split('.')[1]
+                schema_table = schemas_context.get(source).get(input_table)
+                if not schema_table:
+                    raise NoInputSpecifiedError(input_table)
+                self.snapshot_context['input_table'] = schema_table.split('.')[1]
+                self.snapshot_context['source_schema'] = schema_table.split('.')[0]
+            else:
+                schema = schemas_context.get(input_table)
+                if not schema:
+                    raise NoInputSpecifiedError(input_table)
+                self.snapshot_context['input_table'] = input_table
+                self.snapshot_context['source_schema'] = schema
 
         input_fields = conn.execute_templated_query('get_fields.sql',
                                                     {'schema': self.snapshot_context['source_schema'],

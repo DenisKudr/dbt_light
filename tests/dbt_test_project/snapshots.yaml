@@ -1,5 +1,4 @@
 target_schema: dwh_dds
-source_schema: etl_stg
 delta_schema: public
 snapshots:
   - pattern_name: snap_time.*
@@ -7,7 +6,7 @@ snapshots:
   - name: snap_check
     strategy: check
     max_dttm: 5999-12-31
-    input_table: check_in
+    model: test_source.check_in
     delta_table: check_in_delta
     key_fields: id_field
     updated_at_field: updated_at_field
@@ -25,24 +24,24 @@ snapshots:
   - name: snap_check_no_delta_table
     strategy: check
     max_dttm: 5999-12-31
-    input_table: check_in
+    model: test_source.check_in
     key_fields: id_field
     ignored_data_fields: ignored_field
     updated_at_field: updated_at_field
   - name: snap_check_processed
     strategy: check
     max_dttm: 5999-12-31
-    input_table: check_in
+    model: test_source.check_in
     key_fields: id_field
     ignored_data_fields: ignored_field
   - name: snap_check_no_data
     strategy: check
-    input_table: check_in_no_data
+    model: test_source.check_in_no_data 
     key_fields: id_field
     updated_at_field: updated_at_field
   - name: snap_timestamp
     strategy: timestamp
-    input_table: check_in
+    model: test_source.check_in
     delta_table: check_in_delta
     key_fields: id_field
     ignored_data_fields: ignored_field
@@ -50,7 +49,7 @@ snapshots:
   - name: snap_check_new_fields
     strategy: check
     max_dttm: 5999-12-31
-    input_table: check_in
+    model: test_source.check_in
     delta_table: check_in_delta
     key_fields: id_field
     ignored_data_fields: ignored_field

@@ -26,9 +26,8 @@ class SnapshotContext:
             'target_schema': str,
             'snapshot': str,
             'key_fields': Or(str, [str]),
-            'strategy': Or('check', 'timestamp'),
-            Optional('source_schema'): str,
-            Optional('input_table'): str,
+            Optional('strategy', default='check'): Or('check', 'timestamp'),
+            Optional('model'): str,
             Optional('delta_schema'): str,
             Optional('delta_table', default='temp_delta_table'): str,
             Optional('invalidate_hard_deletes', default=True): bool,
@@ -85,7 +84,7 @@ class SnapshotContext:
             if not snapshot:
                 return None
 
-            if not snapshot.get('input_table'):
+            if not snapshot.get('model'):
                 snapshot_file = Path(f"{self.dbt_project_path}/snapshots/{snapshot['snapshot']}.sql")
                 if not snapshot_file.is_file():
                     raise NoInputSpecifiedError(snapshot['snapshot'])
