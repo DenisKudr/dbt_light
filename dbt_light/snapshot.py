@@ -66,6 +66,8 @@ class Snapshot:
                                                             self.snapshot_context.get('updated_at_field'),
                                                             self.snapshot_context.get('processed_field'),
                                                             self.snapshot_context.get('hash_diff_field')]))]
+        if self.snapshot_context.get('deleted_flg'):
+            all_data_fields = [field for field in all_data_fields if field not in self.snapshot_context['deleted_flg'].upper()]
         data_fields = self.snapshot_context.get('data_fields')
         if not data_fields:
             data_fields = all_data_fields
@@ -125,6 +127,8 @@ class Snapshot:
             conn.execute_templated_query('snapshot_update.sql', self.snapshot_context, 'execute')
         if new_objects or new_values:
             conn.execute_templated_query('snapshot_insert.sql', self.snapshot_context, 'execute')
+        if self.snapshot_context.get('updated_at_field'):
+            conn.execute_templated_query('snapshot_update_multiple_versions.sql', self.snapshot_context, 'execute')
 
         if self.snapshot_context.get('tests'):
             Test(conn, f"{self.snapshot_context['target_schema']}.{self.snapshot_context['snapshot']}",

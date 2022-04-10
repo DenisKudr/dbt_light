@@ -18,7 +18,9 @@ class TestSnapshot(TestCase):
              'incr_script': 'snapshot_incr_no_data_fields'},
             {'snapshot': 'snap_check_new_fields', 'incr_script': 'snapshot_incr_new_fields'},
             {'snapshot': 'snap_check_with_model'},
-            {'snapshot': 'snap_check', 'full_refresh': True}
+            {'snapshot': 'snap_check', 'full_refresh': True},
+            {'snapshot': 'snap_timestamp_cdc', 'init_script': 'snapshot_init_cdc',
+             'incr_script': 'snapshot_incr_cdc'}
         ]
         with DatabaseConnection(dbt_test_project) as db:
             with open(f"sql/{db.config['adapter']}/snapshot_init_drop.sql", 'r') as f:

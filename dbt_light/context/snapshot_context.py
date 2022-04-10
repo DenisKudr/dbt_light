@@ -39,6 +39,8 @@ class SnapshotContext:
             Optional('end_field', default='effective_to_dttm'): str,
             Optional('data_fields'): Or(str, [str]),
             Optional('ignored_data_fields'): Or(str, [str]),
+            Optional('deleted_flg'): str,
+            Optional('deleted_flg_val', default='Delete'): str,
             Optional('tests'): {
                 Optional(str): Optional(list)
             },

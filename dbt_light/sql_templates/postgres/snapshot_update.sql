@@ -24,7 +24,12 @@ SET
     {% endfor %}
     {{ end_field }} = case
         when dff.diff_type = 'DU' then dds.{{ end_field }}
-        when dff.diff_type = 'DO' then dff.{{ processed_field }}
+        when dff.diff_type = 'DO' then
+        {% if deleted_flg %}
+            dff.{{ updated_at_field }}
+        {% else %}
+            dff.{{ processed_field }}
+        {% endif %}
         else
         {% if updated_at_field %}
             dff.{{ updated_at_field }}

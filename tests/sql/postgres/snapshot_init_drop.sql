@@ -6,3 +6,4 @@ DROP TABLE IF EXISTS dwh_dds.snap_check_processed;
 DROP TABLE IF EXISTS dwh_dds.snap_check_no_data;
 DROP TABLE IF EXISTS dwh_dds.snap_check_new_fields;
 DROP TABLE IF EXISTS dwh_dds.snap_check_with_model;
+DROP TABLE IF EXISTS  dwh_dds.snap_timestamp_cdc;

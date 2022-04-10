@@ -61,3 +61,13 @@ snapshots:
     key_fields: id_field
     ignored_data_fields: ignored_field
     updated_at_field: updated_at_field
+  - name: snap_timestamp_cdc
+    model: test_source.check_in_cdc
+    strategy: timestamp
+    delta_table: check_in_delta
+    key_fields: id_field
+    ignored_data_fields: ignored_field
+    updated_at_field: updated_at_field
+    deleted_flg: cdc_field
+    deleted_flg_val: Delete
+    invalidate_hard_deletes: False

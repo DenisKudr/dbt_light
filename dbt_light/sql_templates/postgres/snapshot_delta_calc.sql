@@ -49,7 +49,13 @@
                 {% endif %}
             {% endif %}
         {% endif %}
-        'NO' as diff_type
+        {% if deleted_flg %}
+            case when {{ deleted_flg }} = '{{ deleted_flg_val }}' then 'DO'
+            else 'NO' end as diff_type
+        {% else %}
+           'NO' as diff_type
+        {% endif %}
+
     FROM
             {{ source_schema }}.{{ input_table }} as src
 {% else %}
@@ -85,8 +91,12 @@
             {% endif %}
         {% endif %}
         case
+            when src.{{ key_fields | first }} is null
+            {% if deleted_flg %}
+                or {{ deleted_flg }} = '{{ deleted_flg_val }}'
+            {% endif %}
+            then 'DO'
             when dds.{{ key_fields | first }} is null then 'NO'
-            when src.{{ key_fields | first }} is null then 'DO'
             when dds.{{ start_field }} =
                 {% if updated_at_field %}
                     src.{{ updated_at_field }}

@@ -10,3 +10,5 @@ sources:
         description: Model for snapshotting
       - name: check_in_no_data 
         description: Model for snapshotting without data
+      - name: check_in_cdc
+        description: Model for snapshotting cdc data
