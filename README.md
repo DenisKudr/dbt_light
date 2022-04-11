@@ -1,14 +1,14 @@
 Lightweight data build tool 
 ===============================================================================
 
-**dbt_light** is a library for developing transformations inside data warehouse. It handles the T in ELT processes by turning select queries templated with [jinja2](https://github.com/pallets/jinja) into tables/views without the need to write and apply ddl as it will automatically handle objects creation and addition of new columns.  
+**dbt-light** is a library for developing transformations inside data warehouse. It handles the T in ELT processes by turning select queries templated with [jinja2](https://github.com/pallets/jinja) into tables/views without the need to write and apply ddl as it will automatically handle objects creation and addition of new columns.  
 
-The purpose of DWH is to store history, **dbt_light** does that by using highly configurable snapshots that implement SCD2. They can handle CDC events, full/delta loads and store relationships. 
+The purpose of DWH is to store history, **dbt-light** does that by using highly configurable snapshots that implement SCD2. They can handle CDC full/delta loads, events and store relationships. 
 
 Example
 -------------------------------------------------------------------------------
 
-**dbt_light** has a simple API that allows object creation by its name in project directory:
+**dbt-light** has a simple API that allows object creation by its name in project directory:
 
 ```python
 >>> from dbt_light.model import Model
@@ -25,18 +25,18 @@ Installation
 
 Use `pip`:
 
-    pip install dbt_light
+    pip install dbt-light
 
 Then execute the module to create new dbt project:
 
-    python -m dbt_light 
+    python -m dbt-light 
 
-This will create ~/.dbt_light/profiles.yaml if it doesn't exist already. This file contains all dbt projects with paths to their folders as well as connection parameters to target db (only postgres is supproted now). 
+This will create ~/.dbt-light/profiles.yaml if it doesn't exist already. This file contains all dbt projects with paths to their folders as well as connection parameters to target db (only postgres is supproted now). 
 
 Example of *profiles.yaml* file:
 ```yaml
-dbt_light_project:
-  path: /home/user/dbt_light_project
+dbt-light_project:
+  path: /home/user/dbt-light_project
   adapter: postgres
   dbname: postgres
   host: localhost
@@ -44,9 +44,9 @@ dbt_light_project:
   port: 5432
   user: postgres
 ```
-This will also create template folder with dbt_light project in your current directory with the following structure:
+This will also create template folder with dbt-light project in your current directory with the following structure:
 ```bash
-├── dbt_light_project
+├── dbt-light_project
 │   ├── models
 │   ├── incremental_models
 │   ├── snapshots
@@ -78,9 +78,9 @@ There are three main classes: `Model`, `Snapshot` and `Seed`. They can be create
 
 These classes have method `materialize` to load the object in database. By default, object (and its schema if not exists) gets created on the first run and insert (sometimes truncate before that) is performed on all consecutive runs. If `full_refresh` is passed as True than *DROP CASCADE* will be used which will also drop all objects that depend on it. Models with *view* materialization are dropped with cascade every time even if `full_refresh` is False.
 
-`dbt_light` will handle adding new fields without loading objects with `full_refresh` set to True. So `full_refresh` can be used to recreate objects to delete fields that are no longer used, by default *null* will be inserted into them. Or it can be used to recreate objects that have state like snapshots and incremental models but in this case all the history will be lost. 
+`dbt-light` will handle adding new fields without loading objects with `full_refresh` set to True. So `full_refresh` can be used to recreate objects to delete fields that are no longer used, by default *null* will be inserted into them. Or it can be used to recreate objects that have state like snapshots and incremental models but in this case all the history will be lost. 
 
-Jinja variables can be used to reference another object by its name. `dbt_light` will interpolate schema when rendering the object.
+Jinja variables can be used to reference another object by its name. `dbt-light` will interpolate schema when rendering the object.
 
 Models
 -------------------------------------------------------------------------------
@@ -113,7 +113,7 @@ There are two ways of detecting changes: *check* (used by default) and *timestam
 
 *Timestamp* will detect changes by comparing `updated_at_field` timestamp which indicates if a row has changed in source system. It gives better performance but should be used only if timestamp is reliable. If changes were made but `updated_at_field` didn't change, new version won't be created or if timestamp changed but no actual changes were made, new version will be created anyway. 
 
-*Check* strategy detects changes by comparing hash sums of data columns. By default, all data columns are used but you can specify columns in `data_fields` or set `ignored_data_fields` to exclude some of them. Hash sum will be stored in column with the name *hash_diff* but you can change the name with `hash_diff_field`. `dbt_light` uses md5 to calculate hash sum but you can calculate it in advance using your own method and if `hash_diff_field` is in input table it will be used instead of calculating a new one. 
+*Check* strategy detects changes by comparing hash sums of data columns. By default, all data columns are used but you can specify columns in `data_fields` or set `ignored_data_fields` to exclude some of them. Hash sum will be stored in column with the name *hash_diff* but you can change the name with `hash_diff_field`. `dbt-light` uses md5 to calculate hash sum but you can calculate it in advance using your own method and if `hash_diff_field` is in input table it will be used instead of calculating a new one. 
 
 There can be no data columns at all. If you're modeling many-to-many relationship you may find it useful to create snapshot to see when relationship started and ended (when row was deleted from source). In this case `hash_diff_field` will not be created.
 
@@ -124,7 +124,7 @@ If `updated_at_field` is not specified then `processed_field` (*processed_dttm* 
 Rows that are absent in input table but exist in snapshot by default will get invalidated unless `invalidate_hard_deletes` is set to False. `processed_field` or `updated_at_field` will be used if `deleted_flg` is defined which tells us when exactly it was deleted from source. *null* is used for effective records but you can specify a timestamp in `max_dttm`. Fields that hold date intervals are called *effective_from_dttm* and *effective_to_dttm* but that can be changed with `start_field` and `end_field`.
 Seeds
 
-*Timestamp* strategy can be used to load data from CDC source. If you load data from table containing Change Data Capture events like Insert, Update, Delete, `dbt_light` will handle situations like multiple versions for the same row in one portion of data and deletions based on Delete events and not on the absence of a row. In order for it to work you must specify `deleted_flg` where `dbt_light` will search for Delete events. By default it will check for 'Delete' values but that can be changed with `deleted_flg_val` property. You might also need to set `invalidate_hard_deletes` to False so it won't invalidate rows based on the absence of it in data portion. `deleted_flg` can be used not only for CDC data but for invalidating rows based on some value, for example, if you have *is_active* column which if set to *N* means it was deleted from source and should be invalidated in snapshot instead of creating new version.   
+*Timestamp* strategy can be used to load data from CDC source. If you load data from table containing Change Data Capture events like Insert, Update, Delete, `dbt-light` will handle situations like multiple versions for the same row in one portion of data and deletions based on Delete events and not on the absence of a row. In order for it to work you must specify `deleted_flg` where `dbt-light` will search for Delete events. By default it will check for 'Delete' values but that can be changed with `deleted_flg_val` property. You might also need to set `invalidate_hard_deletes` to False so it won't invalidate rows based on the absence of it in data portion. `deleted_flg` can be used not only for CDC data but for invalidating rows based on some value, for example, if you have *is_active* column which if set to *N* means it was deleted from source and should be invalidated in snapshot instead of creating new version.   
 
 Seeds
 -------------------------------------------------------------------------------
@@ -201,7 +201,7 @@ You can use jinja macros in models/snapshots. They're defined as usual jinja mac
 Statement
 -------------------------------------------------------------------------------
 
-Function `statement` is a way to perform select query from template and return results back to jinja context. Statement will return either a list if only one column was selected or list of tuples where tuple represent a row:
+Function `statement` is a way to perform select query from template and return results back to jinja context. Statement will return either a list if only one column was selected or list of tuples where tuple represents a row:
 
 ```sql
 {% set country_codes = statement('select country_code from {{ some_seed }}') %}
