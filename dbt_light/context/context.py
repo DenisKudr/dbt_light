@@ -42,7 +42,8 @@ class Context:
             raise DBTProjectNotFound(f'More than one project found in {profiles_path}.\n'
                                      f'You should pass dbt_project param')
         elif len(dbt_projects) == 1:
-            dbt_profile = profiles[dbt_projects[0]]
+            dbt_project = dbt_projects[0]
+            dbt_profile = profiles[dbt_project]
         else:
             try:
                 dbt_profile = profiles[dbt_project]
@@ -53,6 +54,7 @@ class Context:
             raise DBTProjectNotFound(f'dbt_light project path for project {dbt_project} is not a dir')
 
         self.dbt_profile = dbt_profile
+        self.dbt_project = dbt_project
         self.model_context = ModelContext(self.dbt_profile['path'])
         self.snapshot_context = SnapshotContext(self.dbt_profile['path'])
         self.seed_context = SeedContext(self.dbt_profile['path'])
@@ -63,6 +65,7 @@ class Context:
         env = NativeEnvironment()
         env.globals.update(self.schemas_context())
         env.globals.update(self.macro_context(env))
+        env.globals['statement'] = self.statement
         return env
 
     def schemas_context(self) -> dict:
@@ -103,11 +106,19 @@ class Context:
                 raise DuplicateMacroError(macro_name, macro)
         return macros
 
-    def render_model(self, model: str, context: dict = None) -> str:
+    def render_model(self, model: str, context: dict = None, conn = None) -> str:
+        self.env.globals['conn'] = conn
         template = self.env.from_string(model)
         try:
             rendered = template.render(context)
         except (TemplateError, TemplateSyntaxError) as er:
             raise ModelRenderError(model) from er
-
         return rendered
+
+    def statement(self, query: str) -> list:
+        template = self.env.from_string(query)
+        rendered = template.render()
+        res = self.env.globals['conn'].query(rendered)
+        if len(res) > 0 and len(res[0]) == 1:
+            res = [row[0] for row in res]
+        return res

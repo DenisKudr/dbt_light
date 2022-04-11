@@ -3,7 +3,7 @@ Lightweight data build tool
 
 **dbt_light** is a library for developing transformations inside data warehouse. It handles the T in ELT processes by turning select queries templated with [jinja2](https://github.com/pallets/jinja) into tables/views without the need to write and apply ddl as it will automatically handle objects creation and addition of new columns.  
 
-The purpose of DWH is to store history. And **dbt_light** does that by using highly configurable snapshots that implement SCD2. They can handle CDC events, full/delta loads and even store relationships. 
+The purpose of DWH is to store history, **dbt_light** does that by using highly configurable snapshots that implement SCD2. They can handle CDC events, full/delta loads and store relationships. 
 
 Example
 -------------------------------------------------------------------------------
@@ -190,5 +190,26 @@ All existing tests are showed in the example above. Custom tests are not yet sup
 Macros
 -------------------------------------------------------------------------------
 
-You can use jinja macros in models/snapshots that are located in *macros/*.
+You can use jinja macros in models/snapshots. They're defined as usual jinja macros and stored in *macros/*:
+
+```sql
+{% macro surrogate_key(bus_key, sur_key) -%}
+    case when {{ bus_key }} is not null then source_system_cd || '_' || row_id else null end as {{ sur_key }}
+{%- endmacro %}
+```
+
+Statement
+-------------------------------------------------------------------------------
+
+Function `statement` is a way to perform select query from template and return results back to jinja context. Statement will return either a list if only one column was selected or list of tuples where tuple represent a row:
+
+```sql
+{% set country_codes = statement('select country_code from {{ some_seed }}') %}
+
+select * from {{ some_model }} where country_code in (
+{% for cc in country_codes %}
+	'{{ cc }}'
+	{{ ', ' if not loop.last }}
+{% endfor %})
+```
 

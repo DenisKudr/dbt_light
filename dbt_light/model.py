@@ -1,7 +1,7 @@
 from dbt_light.context.context import Context
 from dbt_light.db_connection.with_connection import with_connection
 from dbt_light.db_connection.database_connection import DatabaseConnection
-from dbt_light.exceptions import ModelNotFound, TestsFailed
+from dbt_light.exceptions import ModelNotFound
 from dbt_light.test import Test
 
 
@@ -39,7 +39,7 @@ class Model:
         }
 
         rendered_model = self.context.render_model(self.model_context['model_sql'],
-                                                   temp_table_context)
+                                                   temp_table_context, conn)
         temp_table_context.update({
             'model': self.model_context['model'],
             'model_sql': rendered_model
